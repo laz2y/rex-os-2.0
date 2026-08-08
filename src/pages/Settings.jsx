@@ -3,21 +3,21 @@ import "./Settings.css";
 import { useCallback, useEffect, useState } from "react";
 import {
   Boxes,
+  Camera,
   Check,
-  Cpu,
+  Cloud as CloudIcon,
+  Download,
   Film,
   Palette,
   RefreshCw,
-  Server,
   ShieldCheck,
+  Zap,
 } from "lucide-react";
 
 import { useTheme } from "../hooks/useTheme";
 import { getTheme } from "../core/themes/themeManager";
 import { config } from "../data/config";
-import { API_BASE } from "../api/config";
-import { getJellyfinServer } from "../services/jellyfinService";
-import apiClient from "../services/apiClient";
+import { getConnections, testConnection } from "../api/connections";
 
 /** Converts a hex accent to an "r, g, b" string for rgba() usage in CSS vars. */
 function hexToRgb(hex) {
@@ -25,45 +25,41 @@ function hexToRgb(hex) {
   return `${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}`;
 }
 
-const CHECKS = [
+const CONNECTIONS = [
+  { id: "jellyfin", name: "Jellyfin", description: "Media server", icon: Film },
   {
-    id: "api",
-    name: "REX API",
-    detail: `${API_BASE}/health`,
-    icon: Server,
-    probe: () =>
-      apiClient.get("/health").then((response) => response.data),
+    id: "nextcloud",
+    name: "Nextcloud",
+    description: "Cloud storage",
+    icon: CloudIcon,
   },
+  { id: "immich", name: "Immich", description: "Photo library", icon: Camera },
   {
-    id: "system",
-    name: "System telemetry",
-    detail: "CPU, RAM, storage",
-    icon: Cpu,
-    probe: () => apiClient.get("/system").then((response) => response.data),
-  },
-  {
-    id: "docker",
-    name: "Docker / Portainer",
-    detail: "Container API",
+    id: "portainer",
+    name: "Portainer",
+    description: "Docker / containers",
     icon: Boxes,
-    probe: () => apiClient.get("/docker").then((response) => response.data),
   },
-  {
-    id: "jellyfin",
-    name: "Jellyfin",
-    detail: "Media server API",
-    icon: Film,
-    probe: () => getJellyfinServer(),
-  },
+  { id: "qbittorrent", name: "qBittorrent", description: "Downloads", icon: Download },
 ];
+
+const IDLE = { state: "checking", detail: "Checking…", ms: null };
+
+function idleStates() {
+  return Object.fromEntries(CONNECTIONS.map((conn) => [conn.id, { ...IDLE }]));
+}
+
+const STATE_LABEL = {
+  checking: "Checking…",
+  connected: "Connected",
+  offline: "Offline",
+  error: "Error",
+};
 
 export default function Settings() {
   const { theme, themes, setTheme } = useTheme();
-  const [statuses, setStatuses] = useState(
-    Object.fromEntries(
-      CHECKS.map((check) => [check.id, { state: "wait", ms: null }]),
-    ),
-  );
+  const [statuses, setStatuses] = useState(idleStates);
+  const [testing, setTesting] = useState({});
 
   // Live background preview: swap the artwork slot while hovering a card.
   const previewTheme = useCallback((option) => {
@@ -89,40 +85,69 @@ export default function Settings() {
     [],
   );
 
-  const runChecks = useCallback(async () => {
-    setStatuses(
-      Object.fromEntries(
-        CHECKS.map((check) => [check.id, { state: "wait", ms: null }]),
-      ),
-    );
+  /** Load every service status through the Express backend (server-side probes). */
+  const refreshAll = useCallback(async () => {
+    setStatuses(idleStates());
 
-    await Promise.all(
-      CHECKS.map(async (check) => {
-        const started = performance.now();
+    try {
+      const data = await getConnections();
 
-        try {
-          await check.probe();
-          const ms = Math.round(performance.now() - started);
-
-          setStatuses((prev) => ({
-            ...prev,
-            [check.id]: { state: "ok", ms },
-          }));
-        } catch {
-          const ms = Math.round(performance.now() - started);
-
-          setStatuses((prev) => ({
-            ...prev,
-            [check.id]: { state: "fail", ms },
-          }));
-        }
-      }),
-    );
+      setStatuses(
+        Object.fromEntries(
+          Object.entries(data.services || {}).map(([id, result]) => [
+            id,
+            {
+              state: result.status || "error",
+              detail: result.detail || "—",
+              ms: result.ms ?? null,
+            },
+          ]),
+        ),
+      );
+    } catch {
+      // The REX API itself is unreachable — nothing can be tested.
+      setStatuses(
+        Object.fromEntries(
+          CONNECTIONS.map((conn) => [
+            conn.id,
+            { state: "offline", detail: "REX API unreachable", ms: null },
+          ]),
+        ),
+      );
+    }
   }, []);
 
   useEffect(() => {
-    runChecks();
-  }, [runChecks]);
+    refreshAll();
+  }, [refreshAll]);
+
+  /** Test a single service — the probe runs server-side, never in the browser. */
+  const runTest = useCallback(async (id) => {
+    setTesting((prev) => ({ ...prev, [id]: true }));
+    setStatuses((prev) => ({
+      ...prev,
+      [id]: { state: "checking", detail: "Testing…", ms: null },
+    }));
+
+    try {
+      const result = await testConnection(id);
+      setStatuses((prev) => ({
+        ...prev,
+        [id]: {
+          state: result.status || "error",
+          detail: result.detail || "—",
+          ms: result.ms ?? null,
+        },
+      }));
+    } catch {
+      setStatuses((prev) => ({
+        ...prev,
+        [id]: { state: "offline", detail: "REX API unreachable", ms: null },
+      }));
+    } finally {
+      setTesting((prev) => ({ ...prev, [id]: false }));
+    }
+  }, []);
 
   return (
     <div className="page">
@@ -191,54 +216,76 @@ export default function Settings() {
       </section>
 
       <section className="settings-section fade-up">
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 12,
-          }}
-        >
+        <div className="conn-head">
           <div>
             <h2>Connections</h2>
-            <p>Status of the REX API and its integrations</p>
+            <p>
+              Jellyfin, Nextcloud, Immich, Portainer and qBittorrent. Every
+              check runs through the REX API — credentials stay server-side.
+            </p>
           </div>
 
-          <button type="button" className="refresh-btn" onClick={runChecks}>
+          <button type="button" className="refresh-btn" onClick={refreshAll}>
             <RefreshCw size={15} />
-            Re-check
+            Re-check all
           </button>
         </div>
 
         <div className="conn-list">
-          {CHECKS.map((check) => {
-            const state = statuses[check.id] || { state: "wait", ms: null };
-            const Icon = check.icon;
+          {CONNECTIONS.map((conn) => {
+            const status = statuses[conn.id] || IDLE;
+            const Icon = conn.icon;
+            const isTesting = testing[conn.id];
 
             return (
-              <div className="conn-row" key={check.id}>
+              <div className="conn-row" key={conn.id}>
                 <div className="conn-icon">
                   <Icon size={20} />
                 </div>
 
                 <div className="conn-info">
-                  <h4>{check.name}</h4>
-                  <span>{check.detail}</span>
+                  <h4>{conn.name}</h4>
+                  <span>{conn.description}</span>
                 </div>
 
-                <span className={`conn-state ${state.state}`}>
-                  <span className="foot-dot" />
-                  {state.state === "wait"
-                    ? "Checking…"
-                    : state.state === "ok"
-                    ? "Connected"
-                    : "Unreachable"}
+                {status.detail && (
+                  <span className="conn-detail" title={status.detail}>
+                    {status.detail}
+                  </span>
+                )}
+
+                <span className={`conn-state ${status.state}`}>
+                  <span
+                    className={`foot-dot ${
+                      status.state === "connected"
+                        ? "ok"
+                        : status.state === "offline"
+                        ? "warn"
+                        : status.state === "error"
+                        ? "bad"
+                        : "wait"
+                    }`}
+                  />
+                  {STATE_LABEL[status.state] || status.state}
                 </span>
 
-                {state.ms != null && (
-                  <span className="conn-ms">{state.ms}ms</span>
+                {status.ms != null && (
+                  <span className="conn-ms">{status.ms}ms</span>
                 )}
+
+                <button
+                  type="button"
+                  className="test-btn"
+                  onClick={() => runTest(conn.id)}
+                  disabled={isTesting || status.state === "checking"}
+                >
+                  {isTesting ? (
+                    <RefreshCw size={13} className="spin" />
+                  ) : (
+                    <Zap size={13} />
+                  )}
+                  {isTesting ? "Testing…" : "Test Connection"}
+                </button>
               </div>
             );
           })}

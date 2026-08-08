@@ -1,7 +1,13 @@
 import "./JellyfinWidget.css";
 
 import { useEffect, useState } from "react";
-import { Clapperboard, ExternalLink, Play, RefreshCw } from "lucide-react";
+import {
+  AlertTriangle,
+  Clapperboard,
+  ExternalLink,
+  Play,
+  RefreshCw,
+} from "lucide-react";
 
 import { services } from "../../../data/services";
 
@@ -76,25 +82,24 @@ export default function JellyfinWidget() {
   if (error) {
     return (
       <section className="jellyfin-widget fade-up">
-        <div className="error-card">
-          <div className="error-icon">
+        <div className="jellyfin-header">
+          <h2>
             <Clapperboard size={22} />
-          </div>
+            Jellyfin
+          </h2>
+        </div>
 
-          <div className="error-body">
-            <h3>Jellyfin is unreachable</h3>
-            <p>
-              Could not reach the Jellyfin server. Check that it is running and
-              the API key is configured, then try again.
-            </p>
+        <div className="widget-offline">
+          <div className="widget-offline-info">
+            <AlertTriangle size={15} />
+            Jellyfin unreachable
           </div>
-
           <button
             type="button"
             className="retry-btn"
             onClick={() => window.location.reload()}
           >
-            <RefreshCw size={16} />
+            <RefreshCw size={13} />
             Retry
           </button>
         </div>

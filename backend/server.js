@@ -1,4 +1,8 @@
-require("dotenv").config();
+const path = require("path");
+
+// Server-side credentials live in backend/.env (gitignored) or in the host
+// process environment — never in frontend code or VITE_* variables.
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const express = require("express");
 const cors = require("cors");
@@ -6,6 +10,7 @@ const cors = require("cors");
 const systemRoute = require("./routes/system");
 const dockerRoute = require("./routes/docker");
 const jellyfinRoute = require("./routes/jellyfin");
+const nextcloudRoute = require("./routes/nextcloud");
 
 const app = express();
 
@@ -31,6 +36,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/system", systemRoute);
 app.use("/api/docker", dockerRoute);
 app.use("/api/jellyfin", jellyfinRoute);
+app.use("/api/nextcloud", nextcloudRoute);
 
 app.listen(process.env.PORT || 4000, () => {
   console.log(

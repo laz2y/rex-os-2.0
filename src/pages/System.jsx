@@ -93,6 +93,12 @@ export default function SystemPage() {
   const memTotal = system?.memory?.total ?? 0;
   const storageDetail = system?.storageDetail || null;
   const network = system?.network || null;
+  const netDown = network?.down ?? network?.rx ?? null;
+  const netUp = network?.up ?? network?.tx ?? null;
+  const netLabel =
+    netDown == null && netUp == null
+      ? "Not reporting"
+      : `↓ ${netDown ?? "—"} MB/s · ↑ ${netUp ?? "—"} MB/s`;
   const unavailable = !system;
 
   return (
@@ -156,11 +162,7 @@ export default function SystemPage() {
               <Network size={16} style={{ color: "#06b6d4" }} />
               Network
             </div>
-            <p className="gauge-sub">
-              {network
-                ? `${network.down ?? network.rx ?? "—"} ↓ · ${network.up ?? network.tx ?? "—"} ↑`
-                : "Not reporting"}
-            </p>
+            <p className="gauge-sub">{netLabel}</p>
           </div>
         </div>
       </div>

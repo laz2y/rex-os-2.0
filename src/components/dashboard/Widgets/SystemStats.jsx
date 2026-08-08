@@ -49,6 +49,8 @@ export default function SystemStats({ system, docker, loading, error, onRetry })
   }
 
   const network = system?.network;
+  const netDown = network?.down ?? network?.rx ?? null;
+  const netUp = network?.up ?? network?.tx ?? null;
 
   const stats = [
     {
@@ -81,14 +83,15 @@ export default function SystemStats({ system, docker, loading, error, onRetry })
     {
       title: "Network",
       subtitle: "Throughput",
-      value: network ? network.down ?? network.rx ?? null : null,
-      unit: "",
+      value: netDown,
+      unit: " MB/s",
       icon: Network,
       color: COLORS.network,
       pct: null,
-      footer: network
-        ? `↑ ${network.up ?? network.tx ?? "—"}`
-        : "Not reporting",
+      footer:
+        netDown == null && netUp == null
+          ? "Not reporting"
+          : `↑ ${netUp ?? "—"} MB/s`,
     },
     {
       title: "Docker",

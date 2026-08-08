@@ -1,4 +1,8 @@
 .env.local
+.env
+backend/.env
+backend/.env.local
 node_modules
+backend/node_modules
 dist
 src/convex/_generated

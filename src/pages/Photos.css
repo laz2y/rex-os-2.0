@@ -83,3 +83,84 @@
     font-size: 22px;
   }
 }
+
+/* ============================================================
+   Service launch tile (kept for the Immich secondary card)
+   ============================================================ */
+
+.service-tile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  background: var(--card);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  color: white;
+  transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+  min-width: 0;
+}
+
+.service-tile:hover {
+  transform: translateY(-5px);
+  border-color: var(--primary);
+  background: var(--card-hover);
+}
+
+.service-tile-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+
+.service-tile-info {
+  min-width: 0;
+}
+
+.service-tile-info h3 {
+  font-size: 16px;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.service-tile-info p {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.tile-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.service-tile:hover .tile-open {
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .service-tile {
+    padding: 16px;
+  }
+
+  .service-tile-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+  }
+}

@@ -257,6 +257,39 @@ await ctx.runMutation(internal.users.update, {
 ```
 
 
+## REX OS Backend (Express)
+
+The real backend lives in `backend/` — a small Express API (no Convex).
+The frontend reaches it through `VITE_API_URL` (default `http://localhost:4000/api`);
+all service credentials live server-side in the backend environment.
+
+### Environment variables (backend/.env or host environment)
+
+| Variable | Purpose |
+| --- | --- |
+| `PORT` | API port (default `4000`) |
+| `PORTAINER_URL` / `PORTAINER_API_TOKEN` / `PORTAINER_ENDPOINT_ID` | Docker / Portainer |
+| `JELLYFIN_URL` / `JELLYFIN_API_KEY` | Jellyfin media server |
+| `NEXTCLOUD_URL` / `NEXTCLOUD_USERNAME` / `NEXTCLOUD_PASSWORD` | Nextcloud OCS (Cloud page) |
+| `IMMICH_URL` / `IMMICH_API_KEY` | Immich photos |
+| `QBITTORRENT_URL` / `QBITTORRENT_USERNAME` / `QBITTORRENT_PASSWORD` | qBittorrent downloads |
+| `JWT_SECRET` / `REX_USERNAME` / `REX_PASSWORD_HASH` | Reserved for a future auth layer (not enforced) |
+
+Copy `backend/.env.example` to `backend/.env` (gitignored) or export the same
+variables in the host environment before running `node backend/server.js`.
+
+### API surface
+
+- `GET /api/system` — CPU, RAM, storage **and real network throughput** (`network.download` / `network.upload` in MB/s, `null` when unavailable)
+- `GET /api/system/connections` · `POST /api/system/connections/:id/test` — server-side service probes (Jellyfin, Nextcloud, Immich, Portainer, qBittorrent)
+- `GET /api/nextcloud/status|info|users|storage|activity` — Nextcloud dashboard data (aggregated from real OCS responses; unavailable fields are `null`/`Not available`, never fabricated)
+- `GET /api/docker` (+ `/logs/:id`, `/restart/:id`, `/stop/:id`, `/start/:id`)
+- `GET /api/jellyfin` (+ `/latest`, `/resume`, `/sessions`, `/poster/:id`, …)
+
+**Security rule:** credentials (Portainer token, Nextcloud password, Immich key, …)
+are read from `process.env` only. They are never shipped to the browser, never
+placed in `VITE_*` variables, and never echoed back in API responses.
+
 ## Common Convex Mistakes To Avoid
 
 When using convex, make sure:

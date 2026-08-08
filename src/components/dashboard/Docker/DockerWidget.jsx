@@ -1,6 +1,11 @@
 import "./DockerWidget.css";
 
-import { Boxes, ExternalLink, RefreshCw, Server } from "lucide-react";
+import {
+  AlertTriangle,
+  ExternalLink,
+  RefreshCw,
+  Server,
+} from "lucide-react";
 
 import DockerDetails from "./DockerDetails";
 import useDocker from "../../../hooks/useDocker";
@@ -45,21 +50,17 @@ export default function DockerWidget({ docker, loading, error, onRetry }) {
   if (error && !docker) {
     return (
       <section className="docker-widget fade-up">
-        <div className="error-card">
-          <div className="error-icon">
-            <Boxes size={22} />
-          </div>
+        <div className="docker-header">
+          <h2>Docker Containers</h2>
+        </div>
 
-          <div className="error-body">
-            <h3>Docker is unreachable</h3>
-            <p>
-              Could not reach Portainer. Check that Portainer is running and the
-              API token is configured, then try again.
-            </p>
+        <div className="widget-offline">
+          <div className="widget-offline-info">
+            <AlertTriangle size={15} />
+            Portainer unreachable
           </div>
-
           <button type="button" className="retry-btn" onClick={onRetry}>
-            <RefreshCw size={16} />
+            <RefreshCw size={13} />
             Retry
           </button>
         </div>

@@ -32,6 +32,47 @@ function getStorageUsage() {
   }
 }
 
+/**
+ * Real network throughput (MB/s) sampled from /proc/net/dev over 1s.
+ * Returns { download, upload } or { null, null } when unavailable.
+ */
+function readNetBytes() {
+  const raw = fs.readFileSync("/proc/net/dev", "utf8");
+  let rx = 0;
+  let tx = 0;
+
+  for (const line of raw.split("\n").slice(2)) {
+    const match = line.match(
+      /^\s*([^:\s]+):\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/
+    );
+    if (!match || match[1] === "lo") continue;
+    rx += parseInt(match[2], 10); // rx_bytes
+    tx += parseInt(match[10], 10); // tx_bytes
+  }
+
+  return { rx, tx };
+}
+
+async function getNetworkThroughput() {
+  try {
+    const before = readNetBytes();
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const after = readNetBytes();
+
+    const download = Number(
+      (Math.max(0, after.rx - before.rx) / 1048576).toFixed(2)
+    );
+    const upload = Number(
+      (Math.max(0, after.tx - before.tx) / 1048576).toFixed(2)
+    );
+
+    return { download, upload };
+  } catch {
+    // /proc/net/dev unavailable (e.g. non-Linux host)
+    return { download: null, upload: null };
+  }
+}
+
 /** Reads the CPU temperature from sysfs when exposed (null on non-Linux hosts). */
 function getTemperature() {
   try {
@@ -46,7 +87,9 @@ function getTemperature() {
   return null;
 }
 
-exports.getSystem = (req, res) => {
+exports.getSystem = async (req, res) => {
+  const network = await getNetworkThroughput();
+
   const cpus = os.cpus();
   const cores = cpus.length || 1;
   const loadAvg = os.loadavg();
@@ -79,5 +122,6 @@ exports.getSystem = (req, res) => {
       used: usedMem,
     },
     storageDetail: storage,
+    network,
   });
 };

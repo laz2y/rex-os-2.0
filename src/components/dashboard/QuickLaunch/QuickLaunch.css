@@ -2,7 +2,7 @@
 background:var(--card);
 border:1px solid var(--glass-border);
 border-radius:22px;
-padding:24px;
+padding:20px;
 box-shadow:var(--shadow);
 }
 
@@ -10,7 +10,7 @@ box-shadow:var(--shadow);
 display:flex;
 justify-content:space-between;
 align-items:center;
-margin-bottom:22px;
+margin-bottom:16px;
 }
 
 .section-header h2{
@@ -89,14 +89,12 @@ text-align:center;
 
 }
 
-/* 2-column Quick Launch on phones */
-@media(max-width:640px){
+/* 2-column Quick Launch on phones */@media(max-width:640px){
 
 .launch-grid{
 
 grid-template-columns:repeat(2,1fr);
-
-gap:12px;
+gap:10px;
 
 }
 

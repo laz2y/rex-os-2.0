@@ -629,6 +629,34 @@
   line-height: 1.6;
 }
 
+/* Compact in-widget offline bar (keeps card dimensions small) */
+.widget-offline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px dashed rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.widget-offline-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #fca5a5;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.widget-offline .retry-btn {
+  padding: 7px 13px;
+  font-size: 12px;
+  border-radius: 10px;
+}
+
 /* Empty state */
 .empty-state {
   display: flex;

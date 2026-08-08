@@ -1,4 +1,3 @@
-import "./Cloud.css";
 import "./Photos.css";
 
 import { Camera, ExternalLink } from "lucide-react";

@@ -1,7 +1,7 @@
 .home {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   max-width: 1700px;
   margin: 0 auto;
 }
@@ -10,14 +10,14 @@
 .home-main {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-  gap: 24px;
+  gap: 20px;
   align-items: start;
 }
 
 .home-side {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   min-width: 0;
 }
 
@@ -25,7 +25,7 @@
 .home-lower {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 24px;
+  gap: 20px;
   align-items: start;
 }
 
@@ -43,18 +43,18 @@
 
 @media (max-width: 640px) {
   .home {
-    gap: 18px;
+    gap: 14px;
   }
 
   .home-main {
-    gap: 18px;
+    gap: 14px;
   }
 
   .home-side {
-    gap: 18px;
+    gap: 14px;
   }
 
   .home-lower {
-    gap: 18px;
+    gap: 14px;
   }
 }
