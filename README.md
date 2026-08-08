@@ -273,7 +273,7 @@ all service credentials live server-side in the backend environment.
 | `NEXTCLOUD_URL` / `NEXTCLOUD_USERNAME` / `NEXTCLOUD_PASSWORD` | Nextcloud OCS (Cloud page) |
 | `IMMICH_URL` / `IMMICH_API_KEY` | Immich photos |
 | `QBITTORRENT_URL` / `QBITTORRENT_USERNAME` / `QBITTORRENT_PASSWORD` | qBittorrent downloads |
-| `JWT_SECRET` / `REX_USERNAME` / `REX_PASSWORD_HASH` | Reserved for a future auth layer (not enforced) |
+| `JWT_SECRET` / `REX_USERNAME` / `REX_PASSWORD_HASH` | Server-side auth: bcrypt-verified login + httpOnly JWT session cookie |
 
 Copy `backend/.env.example` to `backend/.env` (gitignored) or export the same
 variables in the host environment before running `node backend/server.js`.
