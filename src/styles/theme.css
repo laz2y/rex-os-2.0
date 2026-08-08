@@ -80,6 +80,17 @@ html[data-theme="goku"] {
   --sidebar-grad: linear-gradient(180deg, #0e1a2c 0%, #080f1c 100%);
 }
 
+/* ---------- Trio — Luffy + Naruto + Goku ---------- */
+html[data-theme="trio"] {
+  --primary: #fbbf24;
+  --primary-dark: #d97706;
+  --primary-soft: rgba(251, 191, 36, 0.14);
+  --glow-rgb: 251, 191, 36;
+  --theme-bg-image: url("/themes/trio/background.svg");
+  --theme-atmo: rgba(251, 191, 36, 0.1);
+  --sidebar-grad: linear-gradient(180deg, #201a08 0%, #120e04 100%);
+}
+
 * {
   margin: 0;
   padding: 0;

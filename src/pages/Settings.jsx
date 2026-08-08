@@ -200,7 +200,7 @@ export default function Settings() {
             <code style={{ color: "white" }}>background.jpg</code>,{" "}
             <code style={{ color: "white" }}>background.png</code> or{" "}
             <code style={{ color: "white" }}>background.webp</code> into{" "}
-            <code style={{ color: "white" }}>public/themes/&#123;luffy|naruto|goku|rex&#125;/</code>{" "}
+            <code style={{ color: "white" }}>public/themes/&#123;rex|luffy|naruto|goku|trio&#125;/</code>{" "}
             and refresh — REX OS picks it up automatically.
           </p>
 

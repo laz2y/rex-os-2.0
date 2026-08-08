@@ -1,7 +1,7 @@
 import "./Login.css";
 
 import { useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import {
   AlertTriangle,
   Eye,
@@ -13,10 +13,10 @@ import {
 
 import { useAuth } from "../hooks/useAuth";
 import { config } from "../data/config";
+import BootScreen from "../components/BootScreen";
 
 export default function Login() {
   const { user, checking, signIn } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
 
   const params = new URLSearchParams(location.search);
@@ -28,8 +28,25 @@ export default function Login() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // Already signed in — skip the login screen.
+  // Post-login welcome animation — shown before navigating to the Dashboard
+  // so the app never flashes its content a moment too early.
+  const [entering, setEntering] = useState(false);
+  const [entered, setEntered] = useState(false);
+
+  // Already signed in.
   if (!checking && user) {
+    // Fresh sign-in: hold the welcome animation until it completes.
+    if (entering && !entered) {
+      return (
+        <BootScreen
+          variant="welcome"
+          minMs={1650}
+          onDone={() => setEntered(true)}
+        />
+      );
+    }
+
+    // Session already existed (e.g. opening /login while authenticated).
     return <Navigate to={returnTo} replace />;
   }
 
@@ -46,7 +63,7 @@ export default function Login() {
 
     try {
       await signIn(username, password);
-      navigate(returnTo, { replace: true });
+      setEntering(true);
     } catch (err) {
       setError(
         err.message === "Invalid credentials"

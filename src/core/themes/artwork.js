@@ -12,6 +12,8 @@
  *   public/themes/luffy/background.avif
  *   public/themes/luffy/background.svg   ← built-in fallback artwork
  *
+ * The same applies to rex, naruto, goku and trio.
+ *
  * Drop a file into the folder (any of those names), refresh, and the theme,
  * the Home hero and the Settings preview all use it automatically.
  */

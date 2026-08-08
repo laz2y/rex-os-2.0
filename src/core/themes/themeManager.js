@@ -8,11 +8,12 @@
  *   public/themes/luffy/background.svg
  *   public/themes/naruto/background.svg
  *   public/themes/goku/background.svg
+ *   public/themes/trio/background.svg   (Luffy + Naruto + Goku combined)
  *
- * The artwork is original vector scenery (1600x900 landscape) so every
- * theme has a real visual identity. Drop your own image over any of those
- * files (or swap the `artwork` path below for a PNG/JPG) and the dashboard
- * artwork updates automatically.
+ * The artwork is original vector character art (1600x900 landscape) so
+ * every theme has a real visual identity. Drop your own image over any of
+ * those files (or swap the `artwork` path below for a PNG/JPG) and the
+ * dashboard artwork updates automatically.
  */
 export const THEMES = [
   {
@@ -46,6 +47,14 @@ export const THEMES = [
     accent: "#38bdf8",
     accentDark: "#0ea5e9",
     artwork: "/themes/goku/background.svg",
+  },
+  {
+    id: "trio",
+    name: "The Trio",
+    subtitle: "Luffy · Naruto · Goku",
+    accent: "#fbbf24",
+    accentDark: "#d97706",
+    artwork: "/themes/trio/background.svg",
   },
 ];
 
