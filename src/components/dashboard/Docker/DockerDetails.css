@@ -116,3 +116,23 @@ to{
 transform:translateX(0);
 }
 }
+
+/* Full-screen drawer on phones */
+@media (max-width: 640px) {
+.docker-details{
+width:100%;
+padding:26px 20px;
+}
+
+.details-grid{
+grid-template-columns:1fr;
+}
+
+.details-actions{
+flex-wrap:wrap;
+}
+
+.details-actions button{
+flex:1 1 40%;
+}
+}

@@ -13,10 +13,17 @@ import {
 } from "lucide-react";
 
 import { useTheme } from "../hooks/useTheme";
+import { getTheme } from "../core/themes/themeManager";
 import { config } from "../data/config";
 import { API_BASE } from "../api/config";
 import { getJellyfinServer } from "../services/jellyfinService";
 import apiClient from "../services/apiClient";
+
+/** Converts a hex accent to an "r, g, b" string for rgba() usage in CSS vars. */
+function hexToRgb(hex) {
+  const value = parseInt(hex.replace("#", ""), 16);
+  return `${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}`;
+}
 
 const CHECKS = [
   {
@@ -56,6 +63,30 @@ export default function Settings() {
     Object.fromEntries(
       CHECKS.map((check) => [check.id, { state: "wait", ms: null }]),
     ),
+  );
+
+  // Live background preview: swap the artwork slot while hovering a card.
+  const previewTheme = useCallback((option) => {
+    if (!option.artwork) return;
+    document.documentElement.style.setProperty(
+      "--theme-bg-image",
+      `url("${option.artwork}")`,
+    );
+  }, []);
+
+  const clearPreview = useCallback(() => {
+    const active = getTheme(theme.id);
+    document.documentElement.style.setProperty(
+      "--theme-bg-image",
+      active.artwork ? `url("${active.artwork}")` : "none",
+    );
+  }, [theme.id]);
+
+  // Never leave a hover preview behind after leaving the page.
+  useEffect(
+    () => () =>
+      document.documentElement.style.removeProperty("--theme-bg-image"),
+    [],
   );
 
   const runChecks = useCallback(async () => {
@@ -105,18 +136,27 @@ export default function Settings() {
           <Palette size={18} /> Anime Themes
         </h2>
         <p>
-          Pick an atmosphere. Artwork is loaded from{" "}
+          Pick an atmosphere — hover a card to preview its background. Artwork
+          is loaded from{" "}
           <code style={{ color: "white" }}>public/themes/</code> — drop your
           own images over the existing files to personalise each theme.
         </p>
 
         <div className="theme-grid">
-          {themes.map((option) => (
+          {themes.map((option, index) => (
             <button
               key={option.id}
               type="button"
-              className={`theme-card ${theme.id === option.id ? "active" : ""}`}
+              className={`theme-card fade-up d-${index + 1} ${
+                theme.id === option.id ? "active" : ""
+              }`}
+              style={{
+                "--theme-accent": option.accent,
+                "--theme-accent-rgb": hexToRgb(option.accent),
+              }}
               onClick={() => setTheme(option.id)}
+              onMouseEnter={() => previewTheme(option)}
+              onMouseLeave={clearPreview}
               aria-pressed={theme.id === option.id}
             >
               <div
@@ -129,6 +169,7 @@ export default function Settings() {
                     : { background: "var(--theme-fallback)" }
                 }
               >
+                <span className="preview-pill">Preview</span>
                 <span className="check">
                   <Check size={16} />
                 </span>

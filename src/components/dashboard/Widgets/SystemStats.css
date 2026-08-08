@@ -49,7 +49,7 @@ height:4px;
 background:linear-gradient(
 90deg,
 transparent,
-rgba(255,255,255,.45),
+rgba(var(--glow-rgb),.4),
 transparent
 );
 

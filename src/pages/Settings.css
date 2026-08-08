@@ -24,6 +24,7 @@
 }
 
 .theme-card {
+  position: relative;
   border: 2px solid var(--glass-border);
   border-radius: 18px;
   overflow: hidden;
@@ -36,6 +37,9 @@
 
 .theme-card:hover {
   transform: translateY(-4px);
+  border-color: var(--theme-accent, var(--primary));
+  box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb, var(--glow-rgb)), 0.22),
+    0 16px 34px rgba(0, 0, 0, 0.4);
 }
 
 .theme-card.active {
@@ -43,14 +47,46 @@
   box-shadow: 0 0 0 3px rgba(var(--glow-rgb), 0.25), 0 14px 30px rgba(0, 0, 0, 0.35);
 }
 
+.theme-card.active .check {
+  animation: scaleIn 0.3s ease;
+}
+
 .theme-art {
+  position: relative;
   height: 110px;
   background-size: cover;
   background-position: center 20%;
+  transition: background-size 0.4s ease;
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
   padding: 10px;
+}
+
+.theme-card:hover .theme-art {
+  background-size: 115%;
+}
+
+.preview-pill {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.theme-card:hover .preview-pill {
+  opacity: 1;
 }
 
 .theme-art .check {

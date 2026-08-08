@@ -98,7 +98,13 @@ export default function DockerPage() {
 
       <div className="docker-summary fade-up d-1">
         <div className="summary-chip">
-          <div className="chip-icon" style={{ background: "#3b82f6" }}>
+          <div
+            className="chip-icon"
+            style={{
+              background: "#3b82f6",
+              boxShadow: "0 10px 24px rgba(59,130,246,.35)",
+            }}
+          >
             <Boxes size={22} />
           </div>
           <div>
@@ -108,7 +114,13 @@ export default function DockerPage() {
         </div>
 
         <div className="summary-chip">
-          <div className="chip-icon" style={{ background: "#22c55e" }}>
+          <div
+            className="chip-icon"
+            style={{
+              background: "#22c55e",
+              boxShadow: "0 10px 24px rgba(34,197,94,.35)",
+            }}
+          >
             <Play size={22} />
           </div>
           <div>
@@ -118,7 +130,13 @@ export default function DockerPage() {
         </div>
 
         <div className="summary-chip">
-          <div className="chip-icon" style={{ background: "#f97316" }}>
+          <div
+            className="chip-icon"
+            style={{
+              background: "#f97316",
+              boxShadow: "0 10px 24px rgba(249,115,22,.35)",
+            }}
+          >
             <Square size={22} />
           </div>
           <div>
@@ -157,6 +175,15 @@ export default function DockerPage() {
           </div>
         </div>
 
+        {!loading && !error && containers.length > 0 && (
+          <div className="docker-table-colhead" aria-hidden="true">
+            <span>Container</span>
+            <span>State</span>
+            <span>Status</span>
+            <span />
+          </div>
+        )}
+
         {loading && !data ? (
           <div aria-busy="true">
             <RowSkeleton />
@@ -193,10 +220,10 @@ export default function DockerPage() {
           </div>
         ) : (
           <div>
-            {containers.map((container) => (
+            {containers.map((container, index) => (
               <div
                 key={container.id}
-                className="docker-row"
+                className={`docker-row fade-up d-${Math.min(index + 1, 8)}`}
                 onClick={() => setSelected(container)}
                 role="button"
                 tabIndex={0}
