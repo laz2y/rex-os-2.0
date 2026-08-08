@@ -1,9 +1,11 @@
 import "./SystemStats.css";
 import {
-  Cpu,
-  MemoryStick,
-  HardDrive,
   Boxes,
+  Cpu,
+  HardDrive,
+  MemoryStick,
+  Network,
+  RefreshCw,
   TrendingUp,
 } from "lucide-react";
 
@@ -11,6 +13,7 @@ const COLORS = {
   cpu: "#3b82f6",
   ram: "#8b5cf6",
   storage: "#22c55e",
+  network: "#06b6d4",
   docker: "#f97316",
 };
 
@@ -30,10 +33,13 @@ function StatSkeleton() {
   );
 }
 
-export default function SystemStats({ system, docker, loading }) {
-  if (loading || !system || !docker) {
+export default function SystemStats({ system, docker, loading, error, onRetry }) {
+  const offline = !loading && !system && !docker;
+
+  if (loading && !system && !docker) {
     return (
       <div className="stats-grid fade-up" aria-busy="true">
+        <StatSkeleton />
         <StatSkeleton />
         <StatSkeleton />
         <StatSkeleton />
@@ -42,54 +48,86 @@ export default function SystemStats({ system, docker, loading }) {
     );
   }
 
+  const network = system?.network;
+
   const stats = [
     {
       title: "CPU",
       subtitle: "System Load",
-      value: system.cpu,
+      value: system?.cpu ?? null,
+      unit: "%",
       icon: Cpu,
       color: COLORS.cpu,
+      pct: system?.cpu ?? null,
     },
     {
       title: "Memory",
       subtitle: "RAM Usage",
-      value: system.ram,
+      value: system?.ram ?? null,
+      unit: "%",
       icon: MemoryStick,
       color: COLORS.ram,
+      pct: system?.ram ?? null,
     },
     {
       title: "Storage",
       subtitle: "Disk Usage",
-      value: system.storage,
+      value: system?.storage ?? null,
+      unit: "%",
       icon: HardDrive,
       color: COLORS.storage,
+      pct: system?.storage ?? null,
+    },
+    {
+      title: "Network",
+      subtitle: "Throughput",
+      value: network ? network.down ?? network.rx ?? null : null,
+      unit: "",
+      icon: Network,
+      color: COLORS.network,
+      pct: null,
+      footer: network
+        ? `↑ ${network.up ?? network.tx ?? "—"}`
+        : "Not reporting",
     },
     {
       title: "Docker",
       subtitle: "Running Containers",
-      value: docker.running,
+      value: docker?.running ?? null,
+      unit: "",
       icon: Boxes,
       color: COLORS.docker,
+      pct: null,
       docker: true,
+      footer: docker
+        ? docker.stopped > 0
+          ? `${docker.stopped} stopped`
+          : "All up"
+        : "Not reporting",
     },
   ];
 
   return (
     <div className="stats-grid fade-up">
+      {offline && (
+        <div className="stats-offline">
+          <span>Telemetry unavailable — showing placeholders</span>
+          <button type="button" onClick={onRetry}>
+            <RefreshCw size={13} />
+            Retry
+          </button>
+        </div>
+      )}
+
       {stats.map((stat, index) => {
         const Icon = stat.icon;
+        const hasValue = typeof stat.value === "number";
 
         return (
-          <div
-            key={stat.title}
-            className={`stat-card d-${index + 1}`}
-          >
+          <div key={stat.title} className={`stat-card d-${index + 1}`}>
             <div className="stat-header">
-              <div
-                className="stat-icon"
-                style={{ background: stat.color }}
-              >
-                <Icon size={22} />
+              <div className="stat-icon" style={{ background: stat.color }}>
+                <Icon size={20} />
               </div>
 
               <div>
@@ -99,41 +137,40 @@ export default function SystemStats({ system, docker, loading }) {
             </div>
 
             <div className="stat-value">
-              {stat.value}
-              {!stat.docker && "%"}
+              {hasValue ? stat.value : "—"}
+              {hasValue && stat.unit}
             </div>
 
             <div className="stat-footer">
               <div
                 className="stat-status"
                 style={{
-                  color: stat.value > 85 ? "#ef4444" : "#22c55e",
+                  color:
+                    stat.pct != null
+                      ? stat.pct > 85
+                        ? "#ef4444"
+                        : "#22c55e"
+                      : "var(--text-secondary)",
                 }}
               >
-                <TrendingUp size={15} />
-                {stat.value > 85 ? "Heavy" : "Healthy"}
+                <TrendingUp size={14} />
+                {stat.pct != null ? (stat.pct > 85 ? "Heavy" : "Healthy") : "—"}
               </div>
 
-              <span>
-                {stat.docker
-                  ? docker.stopped > 0
-                    ? `${docker.stopped} stopped`
-                    : "All up"
-                  : `${stat.value}%`}
-              </span>
+              <span>{stat.footer ?? (hasValue ? `${stat.value}${stat.unit}` : "—")}</span>
             </div>
 
-            <div className="progress">
-              <div
-                className="progress-fill"
-                style={{
-                  width: stat.docker
-                    ? "100%"
-                    : `${stat.value}%`,
-                  background: stat.color,
-                }}
-              />
-            </div>
+            {stat.pct != null && (
+              <div className="progress">
+                <div
+                  className="progress-fill"
+                  style={{
+                    width: `${stat.pct}%`,
+                    background: stat.color,
+                  }}
+                />
+              </div>
+            )}
           </div>
         );
       })}

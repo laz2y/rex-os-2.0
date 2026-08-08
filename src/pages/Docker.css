@@ -233,3 +233,24 @@
     grid-row: 1 / span 2;
   }
 }
+
+/* Tighter rows on phones */
+@media (max-width: 640px) {
+  .docker-table {
+    padding: 14px 10px;
+  }
+
+  .docker-row {
+    padding: 12px 8px;
+    gap: 10px;
+  }
+
+  .row-action {
+    width: 34px;
+    height: 34px;
+  }
+
+  .summary-chip {
+    padding: 16px;
+  }
+}

@@ -4,23 +4,7 @@ import { Cloud as CloudIcon, ExternalLink } from "lucide-react";
 
 import { services } from "../data/services";
 
-const CATEGORY_LABELS = {
-  media: "Media",
-  cloud: "Cloud",
-  photos: "Photos",
-  downloads: "Downloads",
-  system: "System",
-};
-
 export default function Cloud() {
-  const categories = Object.keys(CATEGORY_LABELS)
-    .map((key) => ({
-      id: key,
-      label: CATEGORY_LABELS[key],
-      items: services.filter((service) => service.category === key),
-    }))
-    .filter((category) => category.items.length > 0);
-
   return (
     <div className="page">
       <div className="page-head fade-up">
@@ -28,56 +12,56 @@ export default function Cloud() {
         <p>Everything running on your NAS, one launch pad</p>
       </div>
 
-      {categories.map((category, index) => (
-        <section className="cloud-cat fade-up" key={category.id}>
-          <div className="cloud-cat-head">
-            <CloudIcon size={17} />
-            <h2>{category.label}</h2>
-            <span>{category.items.length}</span>
-          </div>
+      <div className="cloud-grid fade-up">
+        {services.map((service) => {
+          const Icon = service.icon;
 
-          <div className="cloud-grid">
-            {category.items.map((service) => {
-              const Icon = service.icon;
+          return (
+            <a
+              key={service.id}
+              href={service.url}
+              target="_blank"
+              rel="noreferrer"
+              className="service-tile"
+            >
+              <div
+                className="service-tile-icon"
+                style={{ background: service.color }}
+              >
+                <Icon size={24} />
+              </div>
 
-              return (
-                <a
-                  key={service.id}
-                  href={service.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="service-tile"
-                >
-                  <div
-                    className="service-tile-icon"
-                    style={{ background: service.color }}
-                  >
-                    <Icon size={24} />
-                  </div>
+              <div className="service-tile-info">
+                <h3>{service.name}</h3>
+                <p>{service.description}</p>
 
-                  <div className="service-tile-info">
-                    <h3>{service.name}</h3>
-                    <p>{service.description}</p>
-                    <span className="tile-open">
-                      Open
-                      <ExternalLink size={12} />
-                    </span>
-                  </div>
-                </a>
-              );
-            })}
-          </div>
-        </section>
-      ))}
+                <div className="tile-meta">
+                  <span className={`tile-cat ${service.category}`}>
+                    {service.category}
+                  </span>
+                  <span className="tile-open">
+                    Open
+                    <ExternalLink size={12} />
+                  </span>
+                </div>
+              </div>
+            </a>
+          );
+        })}
+      </div>
 
       <p
         className="fade-up"
         style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
           color: "var(--text-secondary)",
           fontSize: 13,
-          textAlign: "center",
         }}
       >
+        <CloudIcon size={14} />
         {services.length} services registered in{" "}
         <code style={{ color: "white" }}>src/data/services.js</code>
       </p>

@@ -1,4 +1,5 @@
 import "./Cloud.css";
+import "./Photos.css";
 
 import { Camera, ExternalLink } from "lucide-react";
 
@@ -14,38 +15,57 @@ export default function Photos() {
         <p>Your Immich library</p>
       </div>
 
-      <div className="empty-state fade-up">
-        <div className="empty-icon">
-          <Camera size={28} />
-        </div>
-        <h3>Immich handles your photos</h3>
-        <p>
-          REX OS keeps the Immich library in its own app — open it to browse,
-          search and share your photos. The thumbnail grid stays in Immich.
-        </p>
+      {immich ? (
+        <>
+          <section className="immich-card fade-up">
+            <div className="immich-banner">
+              <div
+                className="immich-icon"
+                style={{
+                  background: immich.color,
+                  boxShadow: `0 12px 28px ${immich.color}55`,
+                }}
+              >
+                <immich.icon size={30} />
+              </div>
 
-        {immich && (
+              <div className="immich-title">
+                <h2>{immich.name}</h2>
+                <span>Photos & Videos • {immich.description}</span>
+              </div>
+
+              <a
+                className="retry-btn"
+                href={immich.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open Immich
+                <ExternalLink size={16} />
+              </a>
+            </div>
+
+            <div className="immich-body">
+              <div className="immich-row">
+                <span>Service</span>
+                <strong>Photo library & timeline</strong>
+              </div>
+              <div className="immich-row">
+                <span>Address</span>
+                <strong>{immich.url}</strong>
+              </div>
+              <div className="immich-row">
+                <span>Library</span>
+                <strong>Browsing stays in Immich</strong>
+              </div>
+            </div>
+          </section>
+
           <a
-            className="retry-btn"
+            className="service-tile fade-up d-2"
             href={immich.url}
             target="_blank"
             rel="noreferrer"
-            style={{ marginTop: 8 }}
-          >
-            Open Immich
-            <ExternalLink size={16} />
-          </a>
-        )}
-      </div>
-
-      <div className="cloud-grid fade-up d-2">
-        {immich && (
-          <a
-            key={immich.id}
-            href={immich.url}
-            target="_blank"
-            rel="noreferrer"
-            className="service-tile"
           >
             <div
               className="service-tile-icon"
@@ -63,8 +83,16 @@ export default function Photos() {
               </span>
             </div>
           </a>
-        )}
-      </div>
+        </>
+      ) : (
+        <div className="empty-state fade-up">
+          <div className="empty-icon">
+            <Camera size={26} />
+          </div>
+          <h3>Immich is not configured</h3>
+          <p>Add Immich to src/data/services.js to launch it from REX OS.</p>
+        </div>
+      )}
     </div>
   );
 }

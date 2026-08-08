@@ -1,17 +1,24 @@
 import "./Media.css";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
+  Bookmark,
   Clapperboard,
   ExternalLink,
   Film,
   RefreshCw,
   Search,
+  Sparkles,
   X,
 } from "lucide-react";
 
-import { getLibraryItems, mediaUrl } from "../services/jellyfinService";
+import {
+  getLibraryItems,
+  getLatestMedia,
+  getResumeMedia,
+  mediaUrl,
+} from "../services/jellyfinService";
 import { services } from "../data/services";
 
 const TYPES = [
@@ -22,6 +29,61 @@ const TYPES = [
 
 function PosterSkeleton() {
   return <div className="skeleton media-card-sk" />;
+}
+
+function RowSkeleton() {
+  return <div className="skeleton media-poster-sk" />;
+}
+
+function SectionError({ onRetry }) {
+  return (
+    <div className="error-card">
+      <div className="error-icon">
+        <Clapperboard size={20} />
+      </div>
+
+      <div className="error-body">
+        <h3>Jellyfin is unreachable</h3>
+        <p>This section needs the Jellyfin server. Check it, then retry.</p>
+      </div>
+
+      <button type="button" className="retry-btn" onClick={onRetry}>
+        <RefreshCw size={15} />
+        Retry
+      </button>
+    </div>
+  );
+}
+
+function PosterCard({ item, onOpen }) {
+  return (
+    <div
+      className="poster-card"
+      onClick={() => onOpen(item)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(item);
+        }
+      }}
+    >
+      {item.poster ? (
+        <img src={mediaUrl(item.poster)} alt={item.name} loading="lazy" />
+      ) : (
+        <div className="poster-fallback">
+          <Clapperboard size={22} />
+        </div>
+      )}
+
+      <div className="poster-overlay">
+        <span className="type-badge">{item.type}</span>
+        <h4>{item.name}</h4>
+        <p>{item.year || "—"}</p>
+      </div>
+    </div>
+  );
 }
 
 export default function Media() {
@@ -35,7 +97,14 @@ export default function Media() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
+  const [reload, setReload] = useState(0);
   const [selected, setSelected] = useState(null);
+
+  const [recent, setRecent] = useState([]);
+  const [recentState, setRecentState] = useState({ loading: true, error: null });
+
+  const [resume, setResume] = useState([]);
+  const [resumeState, setResumeState] = useState({ loading: true, error: null });
 
   const jellyfin = services.find((service) => service.id === "jellyfin");
 
@@ -44,6 +113,30 @@ export default function Media() {
     const id = setTimeout(() => setDebounced(query.trim()), 350);
     return () => clearTimeout(id);
   }, [query]);
+
+  const loadRecent = useCallback(async () => {
+    setRecentState({ loading: true, error: null });
+    try {
+      const data = await getLatestMedia();
+      setRecent(data);
+      setRecentState({ loading: false, error: null });
+    } catch (err) {
+      console.error("[REX OS] recent load failed:", err);
+      setRecentState({ loading: false, error: err });
+    }
+  }, []);
+
+  const loadResume = useCallback(async () => {
+    setResumeState({ loading: true, error: null });
+    try {
+      const data = await getResumeMedia();
+      setResume(data);
+      setResumeState({ loading: false, error: null });
+    } catch (err) {
+      console.error("[REX OS] resume load failed:", err);
+      setResumeState({ loading: false, error: err });
+    }
+  }, []);
 
   // Fetch the library whenever the filter or search term changes.
   useEffect(() => {
@@ -72,7 +165,13 @@ export default function Media() {
     return () => {
       active = false;
     };
-  }, [type, debounced]);
+  }, [type, debounced, reload]);
+
+  // Side sections load once on mount.
+  useEffect(() => {
+    loadRecent();
+    loadResume();
+  }, [loadRecent, loadResume]);
 
   // Close the detail modal on Escape.
   useEffect(() => {
@@ -138,113 +237,157 @@ export default function Media() {
         </div>
       </div>
 
-      {!loading && !error && (
-        <p className="media-count fade-up">
-          {total} {total === 1 ? "title" : "titles"}
-          {debounced && (
-            <>
-              {" "}
-              for “{debounced}”
-            </>
-          )}
-        </p>
-      )}
-
-      {loading ? (
-        <div className="media-grid" aria-busy="true">
-          {Array.from({ length: 12 }).map((_, index) => (
-            <PosterSkeleton key={index} />
-          ))}
+      {/* Recently Added */}
+      <section className="media-section fade-up">
+        <div className="media-section-head">
+          <h2>
+            <Sparkles size={18} />
+            Recently Added
+          </h2>
         </div>
-      ) : error ? (
-        <div className="error-card fade-up">
-          <div className="error-icon">
-            <Clapperboard size={22} />
-          </div>
 
-          <div className="error-body">
-            <h3>Library unavailable</h3>
-            <p>
-              Jellyfin could not be reached. Check the server and API key, then
-              retry.
-            </p>
+        {recentState.loading ? (
+          <div className="media-poster-row" aria-busy="true">
+            <RowSkeleton />
+            <RowSkeleton />
+            <RowSkeleton />
+            <RowSkeleton />
+            <RowSkeleton />
           </div>
-
-          <button
-            type="button"
-            className="retry-btn"
-            onClick={() => {
-              setDebounced("");
-              setType("");
-            }}
-          >
-            <RefreshCw size={16} />
-            Retry
-          </button>
-        </div>
-      ) : items.length === 0 ? (
-        <div className="empty-state fade-up">
-          <div className="empty-icon">
-            <Film size={24} />
-          </div>
-          <h3>
-            {debounced
-              ? `No results for “${debounced}”`
-              : "Your library is empty"}
-          </h3>
-          <p>
-            {debounced
-              ? "Try a different search term or clear the filter."
-              : "Add media to Jellyfin and it will appear here after the next scan."}
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="media-grid">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="media-card fade-up"
-                onClick={() => setSelected(item)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    setSelected(item);
-                  }
-                }}
-              >
-                {item.poster ? (
-                  <img src={mediaUrl(item.poster)} alt={item.name} loading="lazy" />
-                ) : (
-                  <div className="media-fallback">
-                    <Clapperboard size={26} />
-                    <span>{item.name}</span>
-                  </div>
-                )}
-
-                <div className="media-overlay">
-                  <span className="type-badge">{item.type}</span>
-                  <h4>{item.name}</h4>
-                  <p>{item.year || "—"}</p>
-                </div>
-              </div>
+        ) : recentState.error ? (
+          <SectionError onRetry={loadRecent} />
+        ) : recent.length === 0 ? (
+          <p className="section-empty">Nothing added yet.</p>
+        ) : (
+          <div className="media-poster-row">
+            {recent.map((item) => (
+              <PosterCard key={item.id} item={item} onOpen={setSelected} />
             ))}
           </div>
+        )}
+      </section>
 
-          {items.length < total && (
-            <button
-              type="button"
-              className="load-more fade-up"
-              onClick={loadMore}
-              disabled={loadingMore}
-            >
-              {loadingMore ? "Loading…" : "Load more"}
-            </button>
+      {/* Continue Watching */}
+      <section className="media-section fade-up">
+        <div className="media-section-head">
+          <h2>
+            <Bookmark size={18} />
+            Continue Watching
+          </h2>
+        </div>
+
+        {resumeState.loading ? (
+          <div className="media-poster-row" aria-busy="true">
+            <RowSkeleton />
+            <RowSkeleton />
+            <RowSkeleton />
+          </div>
+        ) : resumeState.error ? (
+          <SectionError onRetry={loadResume} />
+        ) : resume.length === 0 ? (
+          <p className="section-empty">Nothing in progress.</p>
+        ) : (
+          <div className="media-poster-row">
+            {resume.map((item) => (
+              <PosterCard key={item.id} item={item} onOpen={setSelected} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Library */}
+      <section className="media-section fade-up">
+        <div className="media-section-head">
+          <h2>
+            <Film size={18} />
+            Library
+          </h2>
+
+          {!loading && !error && (
+            <span className="media-count">
+              {total} {total === 1 ? "title" : "titles"}
+              {debounced && (
+                <>
+                  {" "}
+                  for “{debounced}”
+                </>
+              )}
+            </span>
           )}
-        </>
-      )}
+        </div>
+
+        {loading ? (
+          <div className="media-grid" aria-busy="true">
+            {Array.from({ length: 12 }).map((_, index) => (
+              <PosterSkeleton key={index} />
+            ))}
+          </div>
+        ) : error ? (
+          <SectionError onRetry={() => setReload((value) => value + 1)} />
+        ) : items.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">
+              <Film size={24} />
+            </div>
+            <h3>
+              {debounced
+                ? `No results for “${debounced}”`
+                : "Your library is empty"}
+            </h3>
+            <p>
+              {debounced
+                ? "Try a different search term or clear the filter."
+                : "Add media to Jellyfin and it will appear here after the next scan."}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="media-grid">
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  className="media-card fade-up"
+                  onClick={() => setSelected(item)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelected(item);
+                    }
+                  }}
+                >
+                  {item.poster ? (
+                    <img src={mediaUrl(item.poster)} alt={item.name} loading="lazy" />
+                  ) : (
+                    <div className="media-fallback">
+                      <Clapperboard size={26} />
+                      <span>{item.name}</span>
+                    </div>
+                  )}
+
+                  <div className="media-overlay">
+                    <span className="type-badge">{item.type}</span>
+                    <h4>{item.name}</h4>
+                    <p>{item.year || "—"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {items.length < total && (
+              <button
+                type="button"
+                className="load-more fade-up"
+                onClick={loadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? "Loading…" : "Load more"}
+              </button>
+            )}
+          </>
+        )}
+      </section>
 
       {selected && (
         <div

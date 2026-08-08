@@ -344,6 +344,47 @@
   box-shadow: 0 8px 20px rgba(var(--glow-rgb), 0.35);
 }
 
+/* Slim offline strip (shown when the whole backend is down) */
+.offline-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  padding: 11px 16px;
+
+  border-radius: 14px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+  color: #fca5a5;
+  font-size: 13px;
+}
+
+.offline-strip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.offline-strip button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 10px;
+  color: #fca5a5;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s ease;
+}
+
+.offline-strip button:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
 .stale-banner {
   display: flex;
   align-items: center;
@@ -806,5 +847,15 @@
   .poster-sk {
     min-width: 150px;
     height: 250px;
+  }
+
+  .empty-state {
+    padding: 28px 16px;
+  }
+
+  .empty-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
   }
 }

@@ -4,11 +4,12 @@ import {
   Activity,
   Cpu,
   Database,
-  Gauge as GaugeIcon,
   HardDrive,
   MemoryStick,
+  Network,
   RefreshCw,
   Server,
+  ShieldCheck,
   Thermometer,
 } from "lucide-react";
 
@@ -19,6 +20,12 @@ function levelColor(value) {
   if (value > 85) return "#ef4444";
   if (value > 70) return "#f59e0b";
   return "var(--primary)";
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return "—";
+  const gb = bytes / 1024 / 1024 / 1024;
+  return gb >= 1024 ? `${(gb / 1024).toFixed(1)} TB` : `${gb.toFixed(1)} GB`;
 }
 
 function Gauge({ label, value, icon: Icon, detail }) {
@@ -50,14 +57,8 @@ function Gauge({ label, value, icon: Icon, detail }) {
   );
 }
 
-function formatBytes(bytes) {
-  if (!bytes) return "—";
-  const gb = bytes / 1024 / 1024 / 1024;
-  return gb >= 1024 ? `${(gb / 1024).toFixed(1)} TB` : `${gb.toFixed(1)} GB`;
-}
-
 export default function SystemPage() {
-  const { loading, system, error, retry } = useDashboard();
+  const { loading, system, error, retry, online } = useDashboard();
 
   if (loading && !system) {
     return (
@@ -71,6 +72,13 @@ export default function SystemPage() {
           <div className="skeleton gauge-sk" />
           <div className="skeleton gauge-sk" />
           <div className="skeleton gauge-sk" />
+          <div className="skeleton gauge-sk" />
+        </div>
+
+        <div className="sys-strip" aria-busy="true">
+          <div className="skeleton panel-sk-sm" />
+          <div className="skeleton panel-sk-sm" />
+          <div className="skeleton panel-sk-sm" />
         </div>
 
         <div className="sys-grid">
@@ -81,39 +89,11 @@ export default function SystemPage() {
     );
   }
 
-  if (error && !system) {
-    return (
-      <div className="page">
-        <div className="page-head">
-          <h1>System</h1>
-          <p>NAS Health & Monitoring</p>
-        </div>
-
-        <div className="error-card fade-up">
-          <div className="error-icon">
-            <GaugeIcon size={22} />
-          </div>
-
-          <div className="error-body">
-            <h3>Telemetry unavailable</h3>
-            <p>
-              REX OS could not read system information from the backend. Make
-              sure the Express API is running, then retry.
-            </p>
-          </div>
-
-          <button type="button" className="retry-btn" onClick={retry}>
-            <RefreshCw size={16} />
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const memUsed = system?.memory?.used ?? 0;
   const memTotal = system?.memory?.total ?? 0;
   const storageDetail = system?.storageDetail || null;
+  const network = system?.network || null;
+  const unavailable = !system;
 
   return (
     <div className="page">
@@ -122,12 +102,27 @@ export default function SystemPage() {
         <p>NAS Health & Monitoring</p>
       </div>
 
+      {error && unavailable && (
+        <div className="offline-strip fade-up">
+          <span>
+            <ShieldCheck size={15} />
+            Telemetry unavailable — showing placeholders
+          </span>
+          <button type="button" onClick={retry}>
+            <RefreshCw size={13} />
+            Retry
+          </button>
+        </div>
+      )}
+
       <div className="gauge-row">
         <Gauge
           label="CPU"
           value={system?.cpu}
           icon={Cpu}
-          detail={system ? `${system.loadAvg?.[0] ?? "—"} · 1 min load` : undefined}
+          detail={
+            system ? `${system.loadAvg?.[0] ?? "—"} · 1 min load` : undefined
+          }
         />
         <Gauge
           label="Memory"
@@ -147,6 +142,104 @@ export default function SystemPage() {
               : undefined
           }
         />
+
+        <div className="gauge-card fade-up net-card">
+          <div className="gauge-ring static">
+            <div className="gauge-inner">
+              <Network size={28} style={{ color: "#06b6d4" }} />
+              <span>Network</span>
+            </div>
+          </div>
+
+          <div>
+            <div className="gauge-title">
+              <Network size={16} style={{ color: "#06b6d4" }} />
+              Network
+            </div>
+            <p className="gauge-sub">
+              {network
+                ? `${network.down ?? network.rx ?? "—"} ↓ · ${network.up ?? network.tx ?? "—"} ↑`
+                : "Not reporting"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="sys-strip">
+        <section className="sys-panel info-card fade-up">
+          <h2>
+            <Server size={17} /> Runtime
+          </h2>
+
+          <div className="info-rows">
+            <div className="info-row">
+              <span>Uptime</span>
+              <strong>{system?.uptime || "—"}</strong>
+            </div>
+            <div className="info-row">
+              <span>Load Average</span>
+              <strong>{system?.loadAvg?.join(" · ") || "—"}</strong>
+            </div>
+            <div className="info-row">
+              <span>Temperature</span>
+              <strong>
+                {system?.temperature != null ? `${system.temperature}°C` : "n/a"}
+              </strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="sys-panel info-card fade-up">
+          <h2>
+            <Database size={17} /> Disk
+          </h2>
+
+          <div className="info-rows">
+            <div className="info-row">
+              <span>Used</span>
+              <strong>{storageDetail ? formatBytes(storageDetail.used) : "—"}</strong>
+            </div>
+            <div className="info-row">
+              <span>Total</span>
+              <strong>{storageDetail ? formatBytes(storageDetail.total) : "—"}</strong>
+            </div>
+            <div className="info-row">
+              <span>Free</span>
+              <strong>
+                {storageDetail
+                  ? formatBytes(Math.max(0, storageDetail.total - storageDetail.used))
+                  : "—"}
+              </strong>
+            </div>
+            <div className="info-row">
+              <span>Usage</span>
+              <strong>{system?.storage != null ? `${system.storage}%` : "—"}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="sys-panel info-card fade-up">
+          <h2>
+            <ShieldCheck size={17} /> Backend
+          </h2>
+
+          <div className="info-rows">
+            <div className="info-row">
+              <span>Status</span>
+              <strong style={{ color: online ? "#22c55e" : "#ef4444" }}>
+                {online ? "Connected" : "Unreachable"}
+              </strong>
+            </div>
+            <div className="info-row">
+              <span>Endpoint</span>
+              <strong>{import.meta.env.VITE_API_URL || "http://localhost:4000/api"}</strong>
+            </div>
+            <div className="info-row">
+              <span>Telemetry</span>
+              <strong>{unavailable ? "—" : "Live"}</strong>
+            </div>
+          </div>
+        </section>
       </div>
 
       <div className="sys-grid">
@@ -174,26 +267,10 @@ export default function SystemPage() {
               <span>CPU Cores</span>
               <strong>{system?.cores ?? "—"}</strong>
             </div>
-            <div className="info-row">
-              <span>Uptime</span>
-              <strong>{system?.uptime || "—"}</strong>
-            </div>
-            <div className="info-row">
-              <span>Load Average</span>
-              <strong>
-                {system?.loadAvg?.join(" · ") || "—"}
-              </strong>
-            </div>
-            <div className="info-row">
-              <span>Temperature</span>
-              <strong>
-                {system?.temperature != null ? `${system.temperature}°C` : "n/a"}
-              </strong>
-            </div>
           </div>
         </section>
 
-        <div className="sys-stack" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div className="sys-stack">
           <section className="sys-panel fade-up">
             <h2>
               <MemoryStick size={18} /> Memory
@@ -220,7 +297,7 @@ export default function SystemPage() {
 
           <section className="sys-panel fade-up">
             <h2>
-              <Database size={18} /> Storage
+              <Activity size={18} /> Storage
             </h2>
 
             <div className="detail-bar">
@@ -246,24 +323,10 @@ export default function SystemPage() {
             <div className="info-rows">
               <div className="info-row">
                 <span>
-                  <Activity size={14} /> Load average
-                </span>
-                <strong>{system?.loadAvg?.join(" · ") || "—"}</strong>
-              </div>
-              <div className="info-row">
-                <span>
-                  <Server size={14} /> Uptime
-                </span>
-                <strong>{system?.uptime || "—"}</strong>
-              </div>
-              <div className="info-row">
-                <span>
                   <Thermometer size={14} /> Temperature
                 </span>
                 <strong>
-                  {system?.temperature != null
-                    ? `${system.temperature}°C`
-                    : "n/a"}
+                  {system?.temperature != null ? `${system.temperature}°C` : "n/a"}
                 </strong>
               </div>
             </div>
