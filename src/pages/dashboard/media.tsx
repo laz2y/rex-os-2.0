@@ -4,7 +4,6 @@ import { Clapperboard, Film, Search, Tv, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { api } from "@/convex/_generated/api";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Empty,

@@ -472,22 +472,26 @@ const CONTAINERS: ContainerSeed[] = [
 export const ensureSeedData = mutation({
   args: {},
   handler: async (ctx) => {
-    const firstMedia = await ctx.db.query("mediaItems").first();
-    const firstContainer = await ctx.db.query("containers").first();
-    const mediaCount = firstMedia === null ? 0 : 1;
-    const containerCount = firstContainer === null ? 0 : 1;
+    // Idempotent: no-op when the demo catalog is already present. The client
+    // also guards against duplicate calls (see layout.tsx), so the dataset
+    // is inserted exactly once per deployment.
+    const hasMedia = (await ctx.db.query("mediaItems").first()) !== null;
+    const hasContainers = (await ctx.db.query("containers").first()) !== null;
 
-    if (mediaCount === 0) {
+    if (!hasMedia) {
       for (const item of MEDIA) {
         await ctx.db.insert("mediaItems", item);
       }
     }
-    if (containerCount === 0) {
+    if (!hasContainers) {
       for (const c of CONTAINERS) {
         await ctx.db.insert("containers", c);
       }
     }
 
-    return { seededMedia: mediaCount === 0, seededContainers: containerCount === 0 };
+    return {
+      seededMedia: !hasMedia,
+      seededContainers: !hasContainers,
+    };
   },
 });

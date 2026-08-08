@@ -12,7 +12,7 @@ import {
   LogOut,
   Wifi,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   NavLink,
   Outlet,
@@ -23,7 +23,6 @@ import {
 import { api } from "@/convex/_generated/api";
 import logo from "@/assets/logo.svg";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -45,6 +44,10 @@ import { NAV_ITEMS, REX_BUILD } from "@/lib/rexos";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_KEY = "rexos:sidebar-collapsed";
+
+// Module-level guard: survives StrictMode remounts so the demo seed mutation
+// is only ever fired once per page load.
+let seedStarted = false;
 
 function initials(name?: string, email?: string) {
   if (name) {
@@ -131,11 +134,10 @@ export default function DashboardLayout() {
   const reduceMotion = useReducedMotion();
 
   const seed = useMutation(api.seed.ensureSeedData);
-  const seededRef = useRef(false);
 
   useEffect(() => {
-    if (seededRef.current) return;
-    seededRef.current = true;
+    if (seedStarted) return;
+    seedStarted = true;
     seed().catch((error) =>
       console.warn("[REX OS] demo data seed failed:", error),
     );

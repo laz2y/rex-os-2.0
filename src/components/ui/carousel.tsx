@@ -93,6 +93,9 @@ function Carousel({
 
   React.useEffect(() => {
     if (!api) return
+    // Initial read so scroll buttons match state on first mount; subsequent
+    // updates arrive via embla events below.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- embla needs an initial sync read
     onSelect(api)
     api.on("reInit", onSelect)
     api.on("select", onSelect)

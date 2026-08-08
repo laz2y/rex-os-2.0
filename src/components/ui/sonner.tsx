@@ -5,15 +5,14 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react"
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
+// REX OS is a dark-only console — pin the toaster to dark so toasts always
+// match the app theme (no next-themes provider is mounted).
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
-
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme="dark"
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

@@ -11,7 +11,7 @@ import {
   Network,
   RefreshCw,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
 
 import { api } from "@/convex/_generated/api";
@@ -52,8 +52,8 @@ function StatCard({
   value: string;
   sub: string;
   accent?: string;
-  chart?: React.ReactNode;
-  children?: React.ReactNode;
+  chart?: ReactNode;
+  children?: ReactNode;
 }) {
   return (
     <div className="group rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-colors hover:border-border sm:p-5">

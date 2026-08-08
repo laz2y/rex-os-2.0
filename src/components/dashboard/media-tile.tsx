@@ -18,6 +18,10 @@ export type MediaItem = Doc<"mediaItems">;
 
 const NEW_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
 
+// Evaluated once at module load (not during render) so the "NEW" badge stays
+// render-pure; freshness only needs to be roughly right per session.
+const SESSION_NOW = Date.now();
+
 export function MediaTile({
   item,
   onSelect,
@@ -27,7 +31,7 @@ export function MediaTile({
   onSelect?: (item: MediaItem) => void;
   className?: string;
 }) {
-  const isNew = Date.now() - item.addedAt < NEW_WINDOW_MS;
+  const isNew = SESSION_NOW - item.addedAt < NEW_WINDOW_MS;
   const watched = item.progress >= 1;
   const inProgress = item.progress > 0 && item.progress < 1;
 
