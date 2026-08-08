@@ -3,8 +3,6 @@ import "./JellyfinWidget.css";
 import { useEffect, useState } from "react";
 import { Clapperboard, ExternalLink, Play, RefreshCw } from "lucide-react";
 
-import HeroBanner from "./HeroBanner";
-import useHeroBanner from "../../../hooks/useHeroBanner";
 import { services } from "../../../data/services";
 
 import {
@@ -58,12 +56,9 @@ export default function JellyfinWidget() {
     };
   }, []);
 
-  const featured = useHeroBanner(latest);
-
   if (loading) {
     return (
       <section className="jellyfin-widget fade-up" aria-busy="true">
-        <div className="skeleton hero-sk" />
         <div className="jellyfin-header">
           <div className="skeleton sk-title-w" />
         </div>
@@ -109,17 +104,6 @@ export default function JellyfinWidget() {
 
   return (
     <section className="jellyfin-widget fade-up">
-      {featured ? (
-        <HeroBanner
-          item={{
-            ...featured,
-            backdrop: mediaUrl(featured.backdrop),
-          }}
-        />
-      ) : (
-        <div className="hero-banner hero-banner-empty" />
-      )}
-
       <div className="jellyfin-header">
         <div>
           <h2>

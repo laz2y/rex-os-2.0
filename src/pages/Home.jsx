@@ -57,26 +57,32 @@ export default function Home() {
         </div>
       )}
 
+      {/* System cards across the top */}
       <SystemStats system={system} docker={docker} loading={loading} />
 
-      <JellyfinWidget />
+      {/* Main control-center split: Jellyfin as the main section, Docker beside it */}
+      <div className="home-main">
+        <JellyfinWidget />
 
-      <div className="home-grid">
-        <DockerWidget
-          docker={docker}
-          loading={loading}
-          error={error}
-          onRetry={retry}
-        />
-
-        <div className="home-stack">
-          <ContinueWatching />
-          <Notifications />
-          <Activity />
+        <div className="home-side">
+          <DockerWidget
+            docker={docker}
+            loading={loading}
+            error={error}
+            onRetry={retry}
+          />
         </div>
       </div>
 
+      {/* Services / Quick Launch strip */}
       <QuickLaunch />
+
+      <ContinueWatching />
+
+      <div className="home-lower">
+        <Notifications />
+        <Activity />
+      </div>
 
       <FooterStatus system={system} docker={docker} online={online} />
     </div>

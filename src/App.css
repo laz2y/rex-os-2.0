@@ -44,7 +44,7 @@
   display: flex;
   flex-direction: column;
 
-  padding: 28px 22px;
+  padding: 22px 18px;
 
   background: linear-gradient(180deg, #131924 0%, #0f141d 100%);
 
@@ -71,22 +71,22 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 
-  margin-bottom: 38px;
+  margin-bottom: 26px;
 }
 
 .logo-icon {
-  width: 56px;
-  height: 56px;
+  width: 46px;
+  height: 46px;
 
-  border-radius: 18px;
+  border-radius: 14px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  font-size: 26px;
+  font-size: 22px;
 
   background: linear-gradient(135deg, var(--primary), #8b5cf6);
 
@@ -100,7 +100,7 @@
 }
 
 .logo h2 {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: white;
 }
@@ -120,7 +120,7 @@
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .nav-item {
@@ -130,12 +130,12 @@
   align-items: center;
   gap: 14px;
 
-  padding: 14px 16px;
+  padding: 12px 14px;
 
   border: none;
   outline: none;
 
-  border-radius: 14px;
+  border-radius: 12px;
 
   background: transparent;
 
@@ -169,7 +169,7 @@
 }
 
 .nav-caption {
-  margin: 22px 8px 6px;
+  margin: 16px 8px 6px;
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -186,9 +186,9 @@
 
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 
-  padding-top: 24px;
+  padding-top: 18px;
 
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -250,7 +250,7 @@
   flex: 1;
   min-width: 0;
 
-  padding: 28px 34px 48px;
+  padding: 24px 32px 44px;
 }
 
 @media (min-width: 1600px) {
@@ -728,12 +728,6 @@
   flex-shrink: 0;
 }
 
-.hero-sk {
-  height: 340px;
-  border-radius: 22px;
-  margin-bottom: 28px;
-}
-
 .media-card-sk {
   aspect-ratio: 2 / 3;
   border-radius: 16px;
@@ -760,10 +754,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.hero-banner-empty {
-  background: linear-gradient(160deg, #172033 0%, #0b0d12 70%);
 }
 
 /* Header / widget small tweaks */
@@ -815,10 +805,6 @@
 @media (max-width: 640px) {
   .poster-sk {
     min-width: 150px;
-    height: 250px;
-  }
-
-  .hero-sk {
     height: 250px;
   }
 }
