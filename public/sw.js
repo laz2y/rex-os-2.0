@@ -2,7 +2,7 @@
  * Conservative caching:
  *  - navigations: network first, fall back to cached shell when offline
  *  - same-origin static assets: stale-while-revalidate
- * Registered only in production builds (see src/main.tsx).
+ * Registered only in production builds (see src/main.jsx).
  */
 const CACHE = "rex-os-v2";
 

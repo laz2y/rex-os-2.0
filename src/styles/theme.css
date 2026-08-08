@@ -1,0 +1,70 @@
+/* ============================================================
+   REX OS theme system
+   Base = original REX blue. Character themes are applied via
+   <html data-theme="luffy|naruto|goku"> and override the
+   accent tokens below. Artwork lives in /public/themes/<id>/
+   and can be replaced with your own images.
+   ============================================================ */
+
+:root {
+  --bg: #0b0d12;
+  --sidebar: #121722;
+  --card: rgba(27, 32, 42, 0.85);
+  --card-hover: #232a36;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --border: #2b3242;
+  --text: #ffffff;
+  --text-secondary: #98a4b6;
+  --green: #22c55e;
+  --orange: #f59e0b;
+  --red: #ef4444;
+  --radius: 20px;
+  --shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
+
+  /* accent tokens — every component uses these (theme switchable) */
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --primary-soft: rgba(59, 130, 246, 0.12);
+  --glow-rgb: 59, 130, 246;
+
+  /* artwork slot: none for the classic REX theme */
+  --theme-bg-image: none;
+  --theme-fallback: linear-gradient(160deg, #172033 0%, #0b0d12 60%);
+}
+
+/* ---------- Luffy — Straw Hat ---------- */
+html[data-theme="luffy"] {
+  --primary: #ef4444;
+  --primary-dark: #dc2626;
+  --primary-soft: rgba(239, 68, 68, 0.14);
+  --glow-rgb: 239, 68, 68;
+  --theme-bg-image: url("/themes/luffy/background.png");
+}
+
+/* ---------- Naruto — Leaf Village ---------- */
+html[data-theme="naruto"] {
+  --primary: #f97316;
+  --primary-dark: #ea580c;
+  --primary-soft: rgba(249, 115, 22, 0.14);
+  --glow-rgb: 249, 115, 22;
+  --theme-bg-image: url("/themes/naruto/background.png");
+}
+
+/* ---------- Goku — Super Saiyan ---------- */
+html[data-theme="goku"] {
+  --primary: #38bdf8;
+  --primary-dark: #0ea5e9;
+  --primary-soft: rgba(56, 189, 248, 0.14);
+  --glow-rgb: 56, 189, 248;
+  --theme-bg-image: url("/themes/goku/background.png");
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}

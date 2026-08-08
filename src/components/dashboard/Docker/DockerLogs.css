@@ -1,0 +1,74 @@
+.logs-overlay{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.7);
+backdrop-filter:blur(8px);
+display:flex;
+justify-content:center;
+align-items:center;
+z-index:10000;
+}
+
+.logs-window{
+width:92%;
+height:88vh;
+background:#0f1720;
+border-radius:22px;
+overflow:hidden;
+display:flex;
+flex-direction:column;
+box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+
+.logs-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:18px 22px;
+background:#151d28;
+border-bottom:1px solid #2b3242;
+}
+
+.logs-header h2{
+font-size:22px;
+}
+
+.logs-actions{
+display:flex;
+gap:10px;
+}
+
+.logs-actions button{
+width:42px;
+height:42px;
+border:none;
+border-radius:12px;
+background:#2563eb;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+cursor:pointer;
+transition:.2s;
+}
+
+.logs-actions button:hover{
+background:#1d4ed8;
+}
+
+.logs-actions button:disabled{
+opacity:.4;
+cursor:not-allowed;
+}
+
+.logs-body{
+flex:1;
+overflow:auto;
+padding:22px;
+background:#090d12;
+font-family:Consolas, monospace;
+font-size:13px;
+line-height:1.6;
+white-space:pre-wrap;
+color:#22c55e;
+}

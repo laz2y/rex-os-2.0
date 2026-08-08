@@ -1,14 +1,14 @@
 {
-  "name": "REX OS — Home Media & Server Console",
+  "name": "REX OS — Control Center",
   "short_name": "REX OS",
-  "description": "A modern, self-hosted NAS operating-system console for media, containers, and hardware telemetry.",
+  "description": "REX OS — your self-hosted NAS control center for media, containers, cloud and photos.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#070b14",
-  "theme_color": "#070b14",
+  "background_color": "#0b0d12",
+  "theme_color": "#0b0d12",
   "lang": "en",
   "categories": ["productivity", "utilities"],
   "icons": [
@@ -33,21 +33,21 @@
   ],
   "shortcuts": [
     {
-      "name": "Overview",
-      "short_name": "Overview",
-      "url": "/dashboard",
+      "name": "Dashboard",
+      "short_name": "Home",
+      "url": "/",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Media Library",
       "short_name": "Media",
-      "url": "/dashboard/media",
+      "url": "/media",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "System Monitor",
       "short_name": "System",
-      "url": "/dashboard/system",
+      "url": "/system",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]

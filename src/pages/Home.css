@@ -1,0 +1,28 @@
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 1700px;
+  margin: 0 auto;
+}
+
+/* Dashboard two-column split (Docker + side stack) */
+.home-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.home-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
+}
+
+@media (max-width: 1200px) {
+  .home-grid {
+    grid-template-columns: 1fr;
+  }
+}
