@@ -16,7 +16,15 @@ import {
 
 import { useAuth } from "@/hooks/use-auth";
 import logo from "@/assets/logo.svg";
-import { ArrowRight, Loader2, Mail, UserX } from "lucide-react";
+import { REX_BUILD } from "@/lib/rexos";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  Mail,
+  ShieldCheck,
+  UserX,
+} from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
@@ -110,185 +118,206 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="rex-grid relative flex min-h-dvh flex-col overflow-hidden">
+      {/* Back to landing */}
+      <div className="absolute left-4 top-4 z-10 sm:left-6 sm:top-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-muted-foreground"
+          onClick={() => navigate("/")}
+        >
+          <ArrowLeft className="size-4" />
+          Back to landing
+        </Button>
+      </div>
 
-      
       {/* Auth Content */}
-      <div className="flex-1 flex items-center justify-center">
-        <div className="flex items-center justify-center h-full flex-col">
-        <Card className="min-w-[350px] pb-0 border shadow-md">
-          {step === "signIn" ? (
-            <>
-              <CardHeader className="text-center">
-              <div className="flex justify-center">
+      <div className="relative flex flex-1 items-center justify-center px-4 py-16">
+        <div className="flex w-full max-w-md flex-col items-center">
+          <Card className="w-full overflow-hidden border-border/80 bg-card/90 pb-0 shadow-lg backdrop-blur">
+            {step === "signIn" ? (
+              <>
+                <CardHeader className="items-center text-center">
+                  <div className="flex justify-center">
                     <img
                       src={logo}
-                      alt="Lock Icon"
+                      alt="REX OS logo"
                       width={64}
                       height={64}
-                      className="rounded-lg mb-4 mt-4 cursor-pointer"
+                      className="mb-4 mt-4 cursor-pointer rounded-xl transition-transform duration-200 hover:scale-105"
                       onClick={() => navigate("/")}
                     />
                   </div>
-                <CardTitle className="text-xl">Get Started</CardTitle>
-                <CardDescription>
-                  Enter your email to log in or sign up
-                </CardDescription>
-              </CardHeader>
-              <form onSubmit={handleEmailSubmit}>
-                <CardContent>
-                  
-                  <div className="relative flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        name="email"
-                        placeholder="name@example.com"
-                        type="email"
-                        className="pl-9"
+                  <CardTitle className="text-xl tracking-tight">
+                    Welcome to REX OS
+                  </CardTitle>
+                  <CardDescription>
+                    Sign in with your email, or continue as a guest
+                  </CardDescription>
+                </CardHeader>
+                <form onSubmit={handleEmailSubmit}>
+                  <CardContent>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          name="email"
+                          placeholder="name@example.com"
+                          type="email"
+                          className="pl-9"
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        size="icon"
                         disabled={isLoading}
-                        required
-                      />
+                        aria-label="Send verification code"
+                      >
+                        {isLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ArrowRight className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
+                    {error && (
+                      <p className="mt-2 text-sm text-destructive">{error}</p>
+                    )}
+
+                    <div className="mt-5">
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-border/70" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-card px-2 text-muted-foreground">
+                            Or
+                          </span>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="mt-5 w-full gap-2"
+                        onClick={handleGuestLogin}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <UserX className="h-4 w-4" />
+                        )}
+                        Continue as Guest
+                      </Button>
+                    </div>
+                  </CardContent>
+                </form>
+              </>
+            ) : (
+              <>
+                <CardHeader className="mt-4 items-center text-center">
+                  <div className="mb-3 flex size-11 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary">
+                    <Mail className="size-5" />
+                  </div>
+                  <CardTitle className="text-xl tracking-tight">
+                    Check your email
+                  </CardTitle>
+                  <CardDescription>
+                    We&apos;ve sent a verification code to{" "}
+                    <span className="font-medium text-foreground">
+                      {step.email}
+                    </span>
+                  </CardDescription>
+                </CardHeader>
+                <form onSubmit={handleOtpSubmit}>
+                  <CardContent className="pb-4">
+                    <input type="hidden" name="email" value={step.email} />
+                    <input type="hidden" name="code" value={otp} />
+
+                    <div className="flex justify-center">
+                      <InputOTP
+                        value={otp}
+                        onChange={setOtp}
+                        maxLength={6}
+                        disabled={isLoading}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && otp.length === 6 && !isLoading) {
+                            const form = (e.target as HTMLElement).closest("form");
+                            if (form) {
+                              form.requestSubmit();
+                            }
+                          }
+                        }}
+                      >
+                        <InputOTPGroup>
+                          {Array.from({ length: 6 }).map((_, index) => (
+                            <InputOTPSlot key={index} index={index} />
+                          ))}
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                    {error && (
+                      <p className="mt-2 text-center text-sm text-destructive">
+                        {error}
+                      </p>
+                    )}
+                    <p className="mt-4 text-center text-sm text-muted-foreground">
+                      Didn&apos;t receive a code?{" "}
+                      <Button
+                        variant="link"
+                        className="h-auto p-0"
+                        onClick={() => setStep("signIn")}
+                      >
+                        Try again
+                      </Button>
+                    </p>
+                  </CardContent>
+                  <CardFooter className="flex-col gap-2">
                     <Button
                       type="submit"
-                      variant="outline"
-                      size="icon"
-                      disabled={isLoading}
+                      className="w-full"
+                      disabled={isLoading || otp.length !== 6}
                     >
                       {isLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Verifying...
+                        </>
                       ) : (
-                        <ArrowRight className="h-4 w-4" />
+                        <>
+                          Verify code
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
                       )}
                     </Button>
-                  </div>
-                  {error && (
-                    <p className="mt-2 text-sm text-red-500">{error}</p>
-                  )}
-                  
-                  <div className="mt-4">
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
-                          Or
-                        </span>
-                      </div>
-                    </div>
-                    
                     <Button
                       type="button"
-                      variant="outline"
-                      className="w-full mt-4"
-                      onClick={handleGuestLogin}
-                      disabled={isLoading}
-                    >
-                      <UserX className="mr-2 h-4 w-4" />
-                      Continue as Guest
-                    </Button>
-                  </div>
-                </CardContent>
-              </form>
-            </>
-          ) : (
-            <>
-              <CardHeader className="text-center mt-4">
-                <CardTitle>Check your email</CardTitle>
-                <CardDescription>
-                  We've sent a code to {step.email}
-                </CardDescription>
-              </CardHeader>
-              <form onSubmit={handleOtpSubmit}>
-                <CardContent className="pb-4">
-                  <input type="hidden" name="email" value={step.email} />
-                  <input type="hidden" name="code" value={otp} />
-
-                  <div className="flex justify-center">
-                    <InputOTP
-                      value={otp}
-                      onChange={setOtp}
-                      maxLength={6}
-                      disabled={isLoading}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && otp.length === 6 && !isLoading) {
-                          // Find the closest form and submit it
-                          const form = (e.target as HTMLElement).closest("form");
-                          if (form) {
-                            form.requestSubmit();
-                          }
-                        }
-                      }}
-                    >
-                      <InputOTPGroup>
-                        {Array.from({ length: 6 }).map((_, index) => (
-                          <InputOTPSlot key={index} index={index} />
-                        ))}
-                      </InputOTPGroup>
-                    </InputOTP>
-                  </div>
-                  {error && (
-                    <p className="mt-2 text-sm text-red-500 text-center">
-                      {error}
-                    </p>
-                  )}
-                  <p className="text-sm text-muted-foreground text-center mt-4">
-                    Didn't receive a code?{" "}
-                    <Button
-                      variant="link"
-                      className="p-0 h-auto"
+                      variant="ghost"
                       onClick={() => setStep("signIn")}
+                      disabled={isLoading}
+                      className="w-full"
                     >
-                      Try again
+                      Use different email
                     </Button>
-                  </p>
-                </CardContent>
-                <CardFooter className="flex-col gap-2">
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isLoading || otp.length !== 6}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Verifying...
-                      </>
-                    ) : (
-                      <>
-                        Verify code
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setStep("signIn")}
-                    disabled={isLoading}
-                    className="w-full"
-                  >
-                    Use different email
-                  </Button>
-                </CardFooter>
-              </form>
-            </>
-          )}
+                  </CardFooter>
+                </form>
+              </>
+            )}
 
-          <div className="py-4 px-6 text-xs text-center text-muted-foreground bg-muted border-t rounded-b-lg">
-            Secured by{" "}
-            <a
-              href="https://freebuff.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-primary transition-colors"
-            >
-              freebuff.com
-            </a>
-          </div>
-        </Card>
+            <div className="flex items-center justify-between border-t border-border/70 bg-muted/40 px-6 py-3.5">
+              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <ShieldCheck className="size-3.5 text-primary/80" />
+                Secured by freebuff.com
+              </span>
+              <span className="font-mono text-[10px] tracking-wider text-muted-foreground/70">
+                {REX_BUILD}
+              </span>
+            </div>
+          </Card>
         </div>
       </div>
     </div>

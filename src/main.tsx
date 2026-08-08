@@ -13,13 +13,25 @@ import "./index.css";
 const Landing = lazy(() => import("./pages/Landing.tsx"));
 const AuthPage = lazy(() => import("./pages/Auth.tsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
+const OverviewPage = lazy(() => import("./pages/dashboard/overview.tsx"));
+const MediaPage = lazy(() => import("./pages/dashboard/media.tsx"));
+const SystemPage = lazy(() => import("./pages/dashboard/system.tsx"));
+const ServicesPage = lazy(() => import("./pages/dashboard/services.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
-// Simple loading fallback for route transitions
+// Themed loading fallback for route transitions
 function RouteLoading() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-pulse text-muted-foreground">Loading...</div>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background">
+      <div className="relative">
+        <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-primary/10" />
+        <div className="flex size-12 items-center justify-center rounded-xl border border-primary/30 bg-card">
+          <span className="size-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+        </div>
+      </div>
+      <p className="font-mono text-xs tracking-widest text-muted-foreground">
+        BOOTING REX OS…
+      </p>
     </div>
   );
 }
@@ -131,7 +143,12 @@ createRoot(document.getElementById("root")!).render(
                     <Dashboard />
                   </RequireAuth>
                 }
-              />
+              >
+                <Route index element={<OverviewPage />} />
+                <Route path="media" element={<MediaPage />} />
+                <Route path="system" element={<SystemPage />} />
+                <Route path="services" element={<ServicesPage />} />
+              </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
