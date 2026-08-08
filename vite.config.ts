@@ -101,7 +101,7 @@ export default defineConfig({
     // auth code (started in a tmux session: PORT=4001 node backend/server.js).
     proxy: {
       "/api": {
-        target: "http://localhost:4001",
+        target: "http://localhost:4000",
         changeOrigin: false,
       },
     },
