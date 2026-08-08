@@ -96,12 +96,12 @@ export default defineConfig({
     hmr: {
       overlay: false,
     },
-    // Forward API calls to the Express backend (port 4000) so the hosted
-    // preview can reach it same-origin. The backend must be running:
-    //   bun backend
+    // Forward API calls to the Express backend so the hosted preview can
+    // reach it same-origin. Points at the fresh instance running the current
+    // auth code (started in a tmux session: PORT=4001 node backend/server.js).
     proxy: {
       "/api": {
-        target: "http://localhost:4000",
+        target: "http://localhost:4001",
         changeOrigin: false,
       },
     },

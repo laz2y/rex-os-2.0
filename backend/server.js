@@ -4,17 +4,45 @@ const path = require("path");
 // process environment — never in frontend code or VITE_* variables.
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
-// Optional gitignored auth override (backend/.auth-secrets.json). When
-// present it takes precedence over the process environment, so credentials
-// can be rotated server-side without rebuilding the env. Never committed.
+// Optional gitignored credential override (backend/.auth-secrets.json).
+// Service/auth values fill gaps when the process environment lacks them; the
+// password hash always overrides so the rotated credential wins. Never
+// committed, never sent to the browser.
 try {
   const secrets = require(path.join(__dirname, ".auth-secrets.json"));
-  if (
-    secrets &&
-    typeof secrets.REX_PASSWORD_HASH === "string" &&
-    secrets.REX_PASSWORD_HASH.length > 0
-  ) {
-    process.env.REX_PASSWORD_HASH = secrets.REX_PASSWORD_HASH;
+  if (secrets) {
+    const GAP_KEYS = [
+      "REX_USERNAME",
+      "JWT_SECRET",
+      "PORTAINER_URL",
+      "PORTAINER_API_TOKEN",
+      "PORTAINER_ENDPOINT_ID",
+      "JELLYFIN_URL",
+      "JELLYFIN_API_KEY",
+      "NEXTCLOUD_URL",
+      "NEXTCLOUD_USERNAME",
+      "NEXTCLOUD_PASSWORD",
+      "IMMICH_URL",
+      "IMMICH_API_KEY",
+      "QBITTORRENT_URL",
+      "QBITTORRENT_USERNAME",
+      "QBITTORRENT_PASSWORD",
+    ];
+    for (const key of GAP_KEYS) {
+      if (
+        typeof secrets[key] === "string" &&
+        secrets[key].length > 0 &&
+        !process.env[key]
+      ) {
+        process.env[key] = secrets[key];
+      }
+    }
+    if (
+      typeof secrets.REX_PASSWORD_HASH === "string" &&
+      secrets.REX_PASSWORD_HASH.length > 0
+    ) {
+      process.env.REX_PASSWORD_HASH = secrets.REX_PASSWORD_HASH;
+    }
   }
 } catch {
   /* no override file — fall back to the process environment */
