@@ -97,6 +97,9 @@
   justify-content: center;
   color: white;
   flex-shrink: 0;
+  /* glassy icon chip over the metric color */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -8px 14px rgba(0, 0, 0, 0.18), 0 10px 22px rgba(0, 0, 0, 0.3);
 }
 
 .stat-value {

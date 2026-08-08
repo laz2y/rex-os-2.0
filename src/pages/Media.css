@@ -336,9 +336,9 @@
   max-height: 88vh;
   overflow: auto;
   border-radius: 22px;
-  background: #141a26;
+  background: rgba(16, 21, 33, 0.88);
   border: 1px solid var(--glass-border);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   animation: scaleIn 0.3s ease;
 }
 
@@ -353,7 +353,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(20, 26, 38, 0.15) 20%, #141a26 96%);
+  background: linear-gradient(180deg, rgba(16, 21, 33, 0.15) 20%, rgba(16, 21, 33, 0.92) 96%);
 }
 
 .media-modal-close {

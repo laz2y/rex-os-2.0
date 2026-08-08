@@ -10,8 +10,8 @@ body,
 
 body {
   background:
-    radial-gradient(circle at 50% 0%, rgba(var(--glow-rgb, 59, 130, 246), 0.14), transparent 55%),
-    #0b0d12;
+    radial-gradient(circle at 50% 0%, rgba(var(--glow-rgb, 59, 130, 246), 0.16), transparent 55%),
+    #0a0e18;
   color: var(--text);
   font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
@@ -59,4 +59,59 @@ input {
 
 .mono {
   font-family: Consolas, "JetBrains Mono", monospace;
+}
+
+/* ============================================================
+   PREMIUM GLASS SYSTEM (Netflix-style dark glassmorphism)
+   Every REX OS panel uses var(--card) (now translucent). This
+   shared recipe adds the frosted backdrop, a soft top highlight
+   and an inner light edge so the anime artwork glows through.
+   :where() keeps zero specificity, so component-specific styles
+   always win.
+   ============================================================ */
+
+:where(
+  .ui-card, .stat-card, .docker-widget, .jellyfin-widget, .quick-launch,
+  .activity, .notifications, .continue-watching, .docker-activity,
+  .nc-stat, .nc-card, .ph-stat, .ph-card, .settings-section,
+  .gauge-card, .sys-panel, .docker-table, .footer-item, .summary-chip,
+  .login-card, .chip, .media-search, .header-clock, .search-box,
+  .notify, .menu-btn, .load-more, .refresh-btn, .docker-toggle,
+  .launch-card, .docker-card, .media-modal, .conn-row, .activity-item,
+  .notif-item, .nc-act-row
+) {
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+/* Soft neon top highlight on the big content panels */
+:where(
+  .ui-card, .docker-widget, .jellyfin-widget, .quick-launch,
+  .activity, .notifications, .continue-watching,
+  .nc-card, .ph-card, .settings-section, .gauge-card,
+  .sys-panel, .docker-table, .login-card
+) {
+  position: relative;
+}
+
+:where(
+  .ui-card, .docker-widget, .jellyfin-widget, .quick-launch,
+  .activity, .notifications, .continue-watching,
+  .nc-card, .ph-card, .settings-section, .gauge-card,
+  .sys-panel, .docker-table, .login-card
+)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--glow-rgb, 59, 130, 246), 0.45),
+    transparent
+  );
+  pointer-events: none;
 }

@@ -1,8 +1,54 @@
+import { spawn } from "node:child_process";
+import net from "node:net";
 import { vlyPlugin } from "@vly-ai/integrations";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { defineConfig } from "vite";
+
+/**
+ * Auto-start the REX OS Express backend (backend/server.js) whenever Vite
+ * boots — so the API survives full project restarts without manual/tmux
+ * startup, no matter how Vite is launched (dev script or directly).
+ *
+ * Guarded: if something already listens on :4000 (e.g. scripts/dev.mjs's own
+ * backend) we skip, so there is never a duplicate process.
+ */
+const BACKEND_PORT = 4000;
+
+function portInUse(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = net.connect(port, "127.0.0.1");
+    socket.setTimeout(900);
+    socket.once("connect", () => {
+      socket.destroy();
+      resolve(true);
+    });
+    socket.once("timeout", () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.once("error", () => resolve(false));
+  });
+}
+
+async function ensureBackend() {
+  try {
+    if (await portInUse(BACKEND_PORT)) return;
+    const child = spawn(process.execPath, ["backend/server.js"], {
+      cwd: path.resolve(__dirname),
+      stdio: "inherit",
+      env: { ...process.env, PORT: String(BACKEND_PORT) },
+    });
+    child.on("error", (error) => {
+      console.error(`[dev] backend failed to start: ${error.message}`);
+    });
+  } catch {
+    // Never block Vite startup.
+  }
+}
+
+void ensureBackend();
 
 // https://vite.dev/config/
 export default defineConfig({
