@@ -161,10 +161,12 @@ export default function Settings() {
           <Palette size={18} /> Anime Themes
         </h2>
         <p>
-          Pick an atmosphere — hover a card to preview its background. Artwork
-          is loaded from{" "}
+          Pick an atmosphere — hover a card to preview its background. Each
+          theme ships with original artwork loaded from{" "}
           <code style={{ color: "white" }}>public/themes/</code> — drop your
-          own images over the existing files to personalise each theme.
+          own image over any{" "}
+          <code style={{ color: "white" }}>background.svg</code> (or point the
+          theme's artwork path at a PNG/JPG) to personalise it.
         </p>
 
         <div className="theme-grid">

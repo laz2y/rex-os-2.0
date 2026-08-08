@@ -5,7 +5,6 @@ import { AlertTriangle, RefreshCw } from "lucide-react";
 import SystemStats from "../components/dashboard/Widgets/SystemStats";
 import QuickLaunch from "../components/dashboard/QuickLaunch/QuickLaunch";
 import DockerWidget from "../components/dashboard/Docker/DockerWidget";
-import DockerActivity from "../components/dashboard/Docker/DockerActivity";
 import JellyfinWidget from "../components/dashboard/Jellyfin/JellyfinWidget";
 import ContinueWatching from "../components/dashboard/Media/ContinueWatching";
 import Notifications from "../components/dashboard/Notifications/Notifications";
@@ -61,12 +60,6 @@ export default function Home() {
 
         <div className="home-side">
           <DockerWidget
-            docker={docker}
-            loading={loading}
-            error={error}
-            onRetry={retry}
-          />
-          <DockerActivity
             docker={docker}
             loading={loading}
             error={error}

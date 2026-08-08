@@ -27,9 +27,24 @@
   --primary-soft: rgba(59, 130, 246, 0.12);
   --glow-rgb: 59, 130, 246;
 
-  /* artwork slot: none for the classic REX theme */
-  --theme-bg-image: none;
+  /* sidebar gradient — theme tinted */
+  --sidebar-grad: linear-gradient(180deg, #131924 0%, #0f141d 100%);
+
+  /* artwork slot + original scenery per theme (see public/themes/) */
+  --theme-bg-image: url("/themes/rex/background.svg");
+  --theme-atmo: rgba(59, 130, 246, 0);
   --theme-fallback: linear-gradient(160deg, #172033 0%, #0b0d12 60%);
+}
+
+/* ---------- REX OS — classic blue grid ---------- */
+html[data-theme="rex"] {
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --primary-soft: rgba(59, 130, 246, 0.12);
+  --glow-rgb: 59, 130, 246;
+  --theme-bg-image: url("/themes/rex/background.svg");
+  --theme-atmo: rgba(59, 130, 246, 0.1);
+  --sidebar-grad: linear-gradient(180deg, #131924 0%, #0f141d 100%);
 }
 
 /* ---------- Luffy — Straw Hat ---------- */
@@ -38,7 +53,9 @@ html[data-theme="luffy"] {
   --primary-dark: #dc2626;
   --primary-soft: rgba(239, 68, 68, 0.14);
   --glow-rgb: 239, 68, 68;
-  --theme-bg-image: url("/themes/luffy/background.png");
+  --theme-bg-image: url("/themes/luffy/background.svg");
+  --theme-atmo: rgba(239, 68, 68, 0.12);
+  --sidebar-grad: linear-gradient(180deg, #1d1216 0%, #120a0d 100%);
 }
 
 /* ---------- Naruto — Leaf Village ---------- */
@@ -47,7 +64,9 @@ html[data-theme="naruto"] {
   --primary-dark: #ea580c;
   --primary-soft: rgba(249, 115, 22, 0.14);
   --glow-rgb: 249, 115, 22;
-  --theme-bg-image: url("/themes/naruto/background.png");
+  --theme-bg-image: url("/themes/naruto/background.svg");
+  --theme-atmo: rgba(249, 115, 22, 0.12);
+  --sidebar-grad: linear-gradient(180deg, #211409 0%, #140b04 100%);
 }
 
 /* ---------- Goku — Super Saiyan ---------- */
@@ -56,7 +75,9 @@ html[data-theme="goku"] {
   --primary-dark: #0ea5e9;
   --primary-soft: rgba(56, 189, 248, 0.14);
   --glow-rgb: 56, 189, 248;
-  --theme-bg-image: url("/themes/goku/background.png");
+  --theme-bg-image: url("/themes/goku/background.svg");
+  --theme-atmo: rgba(56, 189, 248, 0.1);
+  --sidebar-grad: linear-gradient(180deg, #0e1a2c 0%, #080f1c 100%);
 }
 
 * {

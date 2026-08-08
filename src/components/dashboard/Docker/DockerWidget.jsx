@@ -1,7 +1,10 @@
 import "./DockerWidget.css";
 
+import { useState } from "react";
 import {
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
   ExternalLink,
   RefreshCw,
   Server,
@@ -26,8 +29,11 @@ function RowSkeleton() {
   );
 }
 
+const PREVIEW_COUNT = 6;
+
 export default function DockerWidget({ docker, loading, error, onRetry }) {
   const { selectedContainer, openContainer, closeContainer } = useDocker();
+  const [expanded, setExpanded] = useState(false);
 
   const portainer = services.find((service) => service.id === "docker");
 
@@ -69,6 +75,8 @@ export default function DockerWidget({ docker, loading, error, onRetry }) {
   }
 
   const containers = docker?.containers || [];
+  const canExpand = containers.length > PREVIEW_COUNT;
+  const visible = expanded ? containers : containers.slice(0, PREVIEW_COUNT);
 
   return (
     <>
@@ -104,11 +112,12 @@ export default function DockerWidget({ docker, loading, error, onRetry }) {
             <p>Containers started on your NAS will appear here.</p>
           </div>
         ) : (
-          <div className="docker-grid">
-            {containers.map((container) => (
+          <div className={`docker-grid ${expanded ? "is-expanded" : ""}`}>
+            {visible.map((container, index) => (
               <div
                 key={container.id}
                 className="docker-card"
+                style={{ "--i": index }}
                 onClick={() => openContainer(container)}
                 role="button"
                 tabIndex={0}
@@ -144,6 +153,22 @@ export default function DockerWidget({ docker, loading, error, onRetry }) {
               </div>
             ))}
           </div>
+        )}
+
+        {canExpand && (
+          <button
+            type="button"
+            className="docker-toggle"
+            onClick={() => setExpanded((value) => !value)}
+            aria-expanded={expanded}
+          >
+            {expanded ? (
+              <ChevronUp size={15} />
+            ) : (
+              <ChevronDown size={15} />
+            )}
+            {expanded ? "Show less" : `Show all ${containers.length}`}
+          </button>
         )}
       </section>
 

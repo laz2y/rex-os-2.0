@@ -59,16 +59,18 @@ function summarize(result) {
         Object.entries(b.services)
           .map(([id, s]) => `${id}:${s.status}${s.detail ? `(${s.detail})` : ""}`)
           .join(", ") +
-        " }";
-    } else {
-      if (b.online != null) info += `online=${b.online}`;
+        " }";    } else {
+      if (b.online != null) info += ` online=${b.online}`;
       if (b.versionString) info += ` version=${b.versionString}`;
+      if (b.version && b.version.startsWith("v")) info += ` version=${b.version}`;
       if (b.totalUsers != null) info += ` users=${b.totalUsers}`;
       if (b.activeUsers != null) info += ` active=${b.activeUsers}`;
       if (b.total != null) info += ` total=${b.total}`;
       if (b.usagePercent != null) info += ` usage=${b.usagePercent}%`;
       if (b.available != null) info += ` available=${b.available}`;
       if (Array.isArray(b.activities)) info += ` activities=${b.activities.length}`;
+      if (b.statistics) info += ` stats=${JSON.stringify(b.statistics)}`;
+      if (Array.isArray(b.albums)) info += ` albums=${b.albums.length}`;
     }
   }
 
@@ -92,6 +94,7 @@ function summarize(result) {
     "/api/docker",
     "/api/jellyfin",
     "/api/jellyfin/latest",
+    "/api/immich/overview",
   ];
 
   const results = [];

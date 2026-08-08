@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#05080f"/>
+      <stop offset="0.55" stop-color="#0a1220"/>
+      <stop offset="0.85" stop-color="#12233d"/>
+      <stop offset="1" stop-color="#1a3558"/>
+    </linearGradient>
+    <linearGradient id="horizonGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a3558" stop-opacity="0"/>
+      <stop offset="1" stop-color="#2b5ea8" stop-opacity="0.55"/>
+    </linearGradient>
+    <radialGradient id="emblemGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#3b82f6" stop-opacity="0.5"/>
+      <stop offset="0.6" stop-color="#3b82f6" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#3b82f6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="core" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8fc0ff"/>
+      <stop offset="1" stop-color="#3b82f6"/>
+    </radialGradient>
+    <filter id="blur" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16283f" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0a111d" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <rect y="560" width="1600" height="340" fill="url(#horizonGlow)"/>
+
+  <!-- faint hex grid -->
+  <g stroke="#3b82f6" stroke-opacity="0.06" stroke-width="1" fill="none">
+    <path d="M0 60 h1600 M0 140 h1600 M0 220 h1600 M0 300 h1600 M0 380 h1600 M0 460 h1600"/>
+    <path d="M120 0 v560 M380 0 v560 M640 0 v560 M900 0 v560 M1160 0 v560 M1420 0 v560"/>
+  </g>
+
+  <!-- perspective grid floor -->
+  <g stroke="#3b82f6" stroke-opacity="0.14" stroke-width="1" fill="none">
+    <path d="M-200 900 L800 560 M0 900 L800 560 M400 900 L800 560 M800 900 L800 560 M1200 900 L800 560 M1600 900 L800 560 M1800 900 L800 560"/>
+    <path d="M0 640 h1600 M0 700 h1600 M0 760 h1600 M0 820 h1600 M0 880 h1600"/>
+  </g>
+  <rect y="560" width="1600" height="340" fill="url(#floor)"/>
+
+  <!-- rising data particles -->
+  <g fill="#6ea8ff" opacity="0.5">
+    <circle cx="260" cy="470" r="2"><animate attributeName="cy" values="500;180;500" dur="9s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.7;0" dur="9s" repeatCount="indefinite"/></circle>
+    <circle cx="480" cy="380" r="1.6"><animate attributeName="cy" values="520;120;520" dur="12s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.6;0" dur="12s" repeatCount="indefinite"/></circle>
+    <circle cx="1120" cy="410" r="2.2"><animate attributeName="cy" values="540;160;540" dur="10s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.7;0" dur="10s" repeatCount="indefinite"/></circle>
+    <circle cx="1350" cy="330" r="1.6"><animate attributeName="cy" values="500;140;500" dur="14s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.55;0" dur="14s" repeatCount="indefinite"/></circle>
+    <circle cx="660" cy="260" r="1.8"><animate attributeName="cy" values="480;100;480" dur="11s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.65;0" dur="11s" repeatCount="indefinite"/></circle>
+    <circle cx="960" cy="300" r="1.4"><animate attributeName="cy" values="460;120;460" dur="13s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.5;0" dur="13s" repeatCount="indefinite"/></circle>
+  </g>
+
+  <!-- REX emblem -->
+  <circle cx="800" cy="430" r="260" fill="url(#emblemGlow)" filter="url(#blur)"/>
+  <g transform="translate(800 430)">
+    <circle r="150" fill="none" stroke="#3b82f6" stroke-opacity="0.35" stroke-width="2"/>
+    <circle r="138" fill="none" stroke="#3b82f6" stroke-opacity="0.18" stroke-width="1" stroke-dasharray="4 8"/>
+    <g fill="none" stroke="#3b82f6" stroke-opacity="0.5" stroke-width="3">
+      <path d="M-118 -68 L-68 -118 L68 -118 L118 -68 L118 68 L68 118 L-68 118 L-118 68 Z" filter="url(#soft)"/>
+    </g>
+    <path d="M-112 -64 L-64 -112 L64 -112 L112 -64 L112 64 L64 112 L-64 112 L-112 64 Z" fill="none" stroke="#5b9bff" stroke-width="2.5"/>
+    <path d="M-112 -64 L-64 -112 L64 -112 L112 -64 L112 64 L64 112 L-64 112 L-112 64 Z" fill="url(#core)" fill-opacity="0.14"/>
+    <circle cx="0" cy="6" r="44" fill="url(#core)" fill-opacity="0.9"/>
+    <text x="0" y="26" text-anchor="middle" font-family="Arial, sans-serif" font-size="54" font-weight="800" fill="#eaf3ff" letter-spacing="4">REX</text>
+    <g fill="#9cc4ff" font-family="Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="6">
+      <text x="0" y="84" text-anchor="middle" opacity="0.85">O S</text>
+    </g>
+    <circle cx="0" cy="0" r="150" fill="none" stroke="#9cc4ff" stroke-opacity="0.15" stroke-width="1"/>
+    <path d="M150 0 A150 150 0 0 1 -75 129.9" fill="none" stroke="#7fb0ff" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="14 10"/>
+  </g>
+
+  <!-- circuit traces along the bottom -->
+  <g stroke="#3b82f6" stroke-opacity="0.16" stroke-width="1.5" fill="none">
+    <path d="M80 860 h180 v-34 h120"/>
+    <path d="M1230 852 h180 v28 h110"/>
+    <path d="M420 890 v-46 h90 v-22 h60"/>
+    <path d="M1040 890 v-40 h90 v-26 h60"/>
+  </g>
+  <g fill="#5b9bff" opacity="0.5">
+    <circle cx="380" cy="826" r="3.5"/>
+    <circle cx="1520" cy="880" r="3.5"/>
+    <circle cx="570" cy="822" r="3"/>
+    <circle cx="1190" cy="824" r="3"/>
+  </g>
+</svg>

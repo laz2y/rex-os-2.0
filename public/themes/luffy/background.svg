@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c0408"/>
+      <stop offset="0.5" stop-color="#4c0d14"/>
+      <stop offset="0.8" stop-color="#9c1f1a"/>
+      <stop offset="1" stop-color="#d8452f"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffb38a" stop-opacity="0.95"/>
+      <stop offset="0.35" stop-color="#ff6a3d" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ff3d1f" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8c1d17"/>
+      <stop offset="0.25" stop-color="#4a0d10"/>
+      <stop offset="1" stop-color="#120407"/>
+    </linearGradient>
+    <linearGradient id="shimmer" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff8a50" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#ff8a50" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="blur" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <linearGradient id="hatTint" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a0508"/>
+      <stop offset="1" stop-color="#0d0204"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#sky)"/>
+
+  <!-- sun + glow -->
+  <circle cx="500" cy="400" r="260" fill="#ff3d1f" opacity="0.18" filter="url(#blur)"/>
+  <circle cx="500" cy="400" r="130" fill="url(#sun)"/>
+  <circle cx="500" cy="400" r="86" fill="#ffd9b8" opacity="0.9"/>
+
+  <!-- cloud streaks -->
+  <g fill="#2b060b" opacity="0.6">
+    <ellipse cx="240" cy="230" rx="190" ry="14"/>
+    <ellipse cx="430" cy="280" rx="150" ry="10"/>
+    <ellipse cx="1250" cy="210" rx="220" ry="13"/>
+    <ellipse cx="1420" cy="300" rx="140" ry="9"/>
+    <ellipse cx="980" cy="180" rx="120" ry="8" opacity="0.4"/>
+  </g>
+
+  <!-- birds -->
+  <g stroke="#1c0408" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.75">
+    <path d="M340 260 q8 -8 16 0 q8 -8 16 0"/>
+    <path d="M370 285 q7 -7 14 0 q7 -7 14 0"/>
+    <path d="M1150 240 q8 -8 16 0 q8 -8 16 0"/>
+  </g>
+
+  <!-- sea -->
+  <rect y="540" width="1600" height="360" fill="url(#sea)"/>
+  <path d="M0 540 q200 -10 400 0 t400 0 t400 0 t400 0" fill="none" stroke="#c83424" stroke-opacity="0.5" stroke-width="2"/>
+  <path d="M0 600 q200 -10 400 0 t400 0 t400 0 t400 0" fill="none" stroke="#a3231a" stroke-opacity="0.35" stroke-width="2"/>
+
+  <!-- light reflection path on water -->
+  <g fill="url(#shimmer)">
+    <rect x="470" y="540" width="60" height="200" rx="30"/>
+    <rect x="430" y="560" width="140" height="12" rx="6"/>
+    <rect x="440" y="600" width="120" height="10" rx="5"/>
+    <rect x="452" y="640" width="96" height="9" rx="4.5"/>
+    <rect x="460" y="680" width="80" height="8" rx="4"/>
+    <rect x="468" y="718" width="64" height="7" rx="3.5"/>
+  </g>
+
+  <!-- island silhouettes (left) -->
+  <g fill="#140307">
+    <path d="M-40 620 q70 -70 170 -48 q100 22 130 48 z"/>
+    <path d="M20 600 q14 -30 26 -2 l-4 -34 l-8 2 l-2 -18 q-12 10 -14 30 z" fill="#0f0204"/>
+    <path d="M60 604 q10 -24 20 -2 l-3 -26 l-7 2 l-2 -14 q-9 8 -10 22 z" fill="#0f0204"/>
+  </g>
+
+  <!-- sailboat silhouette -->
+  <g fill="#0d0204">
+    <path d="M150 620 L170 500 L190 620 Z" fill="#160408"/>
+    <path d="M176 506 L196 620 L210 620 L188 500 Z" fill="#0d0204"/>
+    <path d="M138 626 h78 l-8 18 h-62 z"/>
+  </g>
+
+  <!-- giant straw hat rising behind the sea (right) -->
+  <g transform="translate(1040 560)">
+    <!-- glow behind hat -->
+    <ellipse cx="150" cy="120" rx="330" ry="180" fill="#ff3d1f" opacity="0.14" filter="url(#blur)"/>
+
+    <!-- crown (dome) -->
+    <path d="M10 60 C0 -150 120 -260 255 -260 C390 -260 510 -150 500 60 Z" fill="url(#hatTint)"/>
+
+    <!-- straw texture lines -->
+    <g stroke="#2b0a0d" stroke-width="1.5" opacity="0.55" fill="none">
+      <path d="M80 -40 C90 -110 150 -180 255 -190"/>
+      <path d="M150 -20 C155 -90 200 -150 255 -160"/>
+      <path d="M330 -20 C325 -90 285 -150 255 -160"/>
+      <path d="M410 -40 C400 -110 340 -180 255 -190"/>
+    </g>
+
+    <!-- red band -->
+    <path d="M6 52 C80 -6 220 -6 300 52 L296 88 C220 34 90 34 10 88 Z" fill="#7a1010"/>
+    <path d="M6 52 C80 -6 220 -6 300 52" fill="none" stroke="#a31616" stroke-width="2" opacity="0.7"/>
+
+    <!-- brim -->
+    <path d="M-150 52 C-20 110 320 110 460 52 C320 160 -20 160 -150 52 Z" fill="#0d0204"/>
+  </g>
+</svg>

@@ -11,6 +11,7 @@ const systemRoute = require("./routes/system");
 const dockerRoute = require("./routes/docker");
 const jellyfinRoute = require("./routes/jellyfin");
 const nextcloudRoute = require("./routes/nextcloud");
+const immichRoute = require("./routes/immich");
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use("/api/system", systemRoute);
 app.use("/api/docker", dockerRoute);
 app.use("/api/jellyfin", jellyfinRoute);
 app.use("/api/nextcloud", nextcloudRoute);
+app.use("/api/immich", immichRoute);
 
 app.listen(process.env.PORT || 4000, () => {
   console.log(

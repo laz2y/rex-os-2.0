@@ -17,7 +17,19 @@
   background-image: var(--theme-bg-image);
   background-size: cover;
   background-position: center 20%;
-  opacity: 0.9;
+  opacity: 0.92;
+}
+
+/* Theme-specific ambient glow (energy/atmosphere tint) */
+.theme-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 90% at 50% 0%,
+    var(--theme-atmo),
+    transparent 70%
+  );
 }
 
 .theme-bg::after {
@@ -27,9 +39,9 @@
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(11, 13, 18, 0.5) 0%,
-    rgba(11, 13, 18, 0.78) 45%,
-    rgba(11, 13, 18, 0.94) 100%
+    rgba(11, 13, 18, 0.55) 0%,
+    rgba(11, 13, 18, 0.8) 45%,
+    rgba(11, 13, 18, 0.95) 100%
   );
 }
 
@@ -46,7 +58,7 @@
 
   padding: 22px 18px;
 
-  background: linear-gradient(180deg, #131924 0%, #0f141d 100%);
+  background: var(--sidebar-grad);
 
   border-right: 1px solid var(--border);
 
