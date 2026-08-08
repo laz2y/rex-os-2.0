@@ -4,6 +4,22 @@ const path = require("path");
 // process environment — never in frontend code or VITE_* variables.
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
+// Optional gitignored auth override (backend/.auth-secrets.json). When
+// present it takes precedence over the process environment, so credentials
+// can be rotated server-side without rebuilding the env. Never committed.
+try {
+  const secrets = require(path.join(__dirname, ".auth-secrets.json"));
+  if (
+    secrets &&
+    typeof secrets.REX_PASSWORD_HASH === "string" &&
+    secrets.REX_PASSWORD_HASH.length > 0
+  ) {
+    process.env.REX_PASSWORD_HASH = secrets.REX_PASSWORD_HASH;
+  }
+} catch {
+  /* no override file — fall back to the process environment */
+}
+
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
