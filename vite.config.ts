@@ -96,5 +96,14 @@ export default defineConfig({
     hmr: {
       overlay: false,
     },
+    // Forward API calls to the Express backend (port 4000) so the hosted
+    // preview can reach it same-origin. The backend must be running:
+    //   bun backend
+    proxy: {
+      "/api": {
+        target: "http://localhost:4000",
+        changeOrigin: false,
+      },
+    },
   },
 });

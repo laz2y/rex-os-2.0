@@ -278,6 +278,23 @@ all service credentials live server-side in the backend environment.
 Copy `backend/.env.example` to `backend/.env` (gitignored) or export the same
 variables in the host environment before running `node backend/server.js`.
 
+### Run + verify
+
+```bash
+cd backend && bun install     # first run only
+cd .. && bun backend          # starts Express on :4000
+node backend/smoke.js         # boots the API in-process and probes every endpoint
+```
+
+`backend/smoke.js` contains no secrets — it reads credentials from the
+environment and prints a per-endpoint status report (system telemetry,
+Nextcloud, connections, Docker, Jellyfin).
+
+In the Vite dev environment, `vite.config.ts` proxies `/api` to
+`http://localhost:4000`, so the browser can reach the backend same-origin
+(no CORS needed locally). In production, set `VITE_API_URL` to the deployed
+API origin (e.g. `https://api.laz2ynas.cc/api`) at build time.
+
 ### API surface
 
 - `GET /api/system` — CPU, RAM, storage **and real network throughput** (`network.download` / `network.upload` in MB/s, `null` when unavailable)

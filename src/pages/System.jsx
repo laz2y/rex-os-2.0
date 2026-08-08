@@ -234,7 +234,7 @@ export default function SystemPage() {
             </div>
             <div className="info-row">
               <span>Endpoint</span>
-              <strong>{import.meta.env.VITE_API_URL || "http://localhost:4000/api"}</strong>
+              <strong>{import.meta.env.VITE_API_URL || "/api"}</strong>
             </div>
             <div className="info-row">
               <span>Telemetry</span>
