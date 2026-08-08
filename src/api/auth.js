@@ -6,18 +6,41 @@ import { API_BASE } from "./config";
  * keeps the cookie flowing on the same-origin /api proxy path.
  */
 async function request(path, options = {}) {
-  const response = await fetch(`${API_BASE}/auth${path}`, {
-    credentials: "same-origin",
-    ...options,
-  });
+  let response;
 
-  const body = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(body.error || "Request failed");
+  try {
+    response = await fetch(`${API_BASE}/auth${path}`, {
+      credentials: "same-origin",
+      ...options,
+    });
+  } catch {
+    throw new Error("Cannot reach the REX API — is the backend running?");
   }
 
-  return body;
+  const body = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    // Server-provided, sanitized message (e.g. "Invalid credentials").
+    if (body && typeof body.error === "string" && body.error.trim()) {
+      throw new Error(body.error);
+    }
+
+    // Map common failures to actionable messages — never echo secrets.
+    if (response.status === 404) {
+      throw new Error(
+        "Auth endpoint not found on the REX API — the backend needs a restart to load the auth routes.",
+      );
+    }
+    if (response.status === 401) {
+      throw new Error("Invalid username or password.");
+    }
+    if (response.status >= 500) {
+      throw new Error("The REX API hit an internal error — check the backend logs.");
+    }
+    throw new Error(`Request failed (HTTP ${response.status}).`);
+  }
+
+  return body || {};
 }
 
 /** GET /api/auth/me — resolves the current session (401 when logged out). */
