@@ -95,7 +95,24 @@ function summarize(result) {
     "/api/jellyfin",
     "/api/jellyfin/latest",
     "/api/immich/overview",
+    "/api/auth/me",
   ];
+
+  // Auth login probe (wrong password must be rejected — 401).
+  try {
+    const res = await fetch(
+      `http://localhost:${process.env.PORT}/api/auth/login`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: "bad-user", password: "bad-pass" }),
+      }
+    );
+    const text = await res.text();
+    console.log(`  POST /api/auth/login (bad creds) -> HTTP ${res.status}  ${text}`);
+  } catch (error) {
+    console.log(`  POST /api/auth/login -> ERROR ${error.message}`);
+  }
 
   const results = [];
   for (const path of paths) {

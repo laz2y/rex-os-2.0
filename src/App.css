@@ -254,6 +254,28 @@
   box-shadow: 0 0 10px rgba(var(--glow-rgb), 0.6);
 }
 
+/* Logout button in the sidebar footer */
+.logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-left: auto;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.1);
+}
+
 /* =========================
    CONTENT
 ========================= */

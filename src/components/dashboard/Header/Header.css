@@ -47,20 +47,31 @@ background:var(--primary);
 box-shadow:0 0 8px rgba(var(--glow-rgb), .8);
 }
 
-.header-left h1{
-font-size:32px;
+.header-meta{
+display:flex;
+flex-direction:column;
+gap:3px;
+margin-top:6px;
+}
+
+.header-brand{
+font-size:15px;
+font-weight:700;
+color:white;
+letter-spacing:0.01em;
+}
+
+.header-brand b{
+color:var(--primary);
 font-weight:800;
-line-height:1.1;
-letter-spacing:-0.02em;
 }
 
 .header-date{
-margin-top:6px;
 display:flex;
 align-items:center;
 gap:8px;
 color:var(--text-secondary);
-font-size:15px;
+font-size:13.5px;
 }
 
 .header-right{
@@ -141,10 +152,6 @@ width:100%;
 flex:1;
 }
 
-.header-left h1{
-font-size:26px;
-}
-
 }
 
 @media(max-width:1023px){
@@ -161,8 +168,8 @@ display:flex;
 display:none;
 }
 
-.header-left h1{
-font-size:24px;
+.header-brand{
+font-size:14px;
 }
 
 }

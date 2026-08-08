@@ -6,11 +6,13 @@ import {
   Cloud,
   HardDrive,
   Home,
+  LogOut,
   Settings,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 import { useTheme } from "../hooks/useTheme";
+import { useAuth } from "../hooks/useAuth";
 import { config } from "../data/config";
 
 const NAV = [
@@ -24,6 +26,14 @@ const NAV = [
 
 export default function Sidebar({ open, onClose }) {
   const { theme, themes, setTheme } = useTheme();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await signOut();
+    onClose();
+    navigate("/login", { replace: true });
+  }
 
   return (
     <>
@@ -96,6 +106,16 @@ export default function Sidebar({ open, onClose }) {
               />
             ))}
           </div>
+
+          <button
+            type="button"
+            className="logout-btn"
+            onClick={handleLogout}
+            title="Log out"
+            aria-label="Log out"
+          >
+            <LogOut size={17} />
+          </button>
         </div>
       </aside>
     </>

@@ -6,17 +6,26 @@ require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 
 const systemRoute = require("./routes/system");
 const dockerRoute = require("./routes/docker");
 const jellyfinRoute = require("./routes/jellyfin");
 const nextcloudRoute = require("./routes/nextcloud");
 const immichRoute = require("./routes/immich");
+const authRoute = require("./routes/auth");
 
 const app = express();
 
-app.use(cors());
+// Reflect the calling origin so the session cookie works cross-origin too.
+app.use(
+  cors({
+    origin: (origin, callback) => callback(null, origin || true),
+    credentials: true,
+  })
+);
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
   res.json({
@@ -39,6 +48,7 @@ app.use("/api/docker", dockerRoute);
 app.use("/api/jellyfin", jellyfinRoute);
 app.use("/api/nextcloud", nextcloudRoute);
 app.use("/api/immich", immichRoute);
+app.use("/api/auth", authRoute);
 
 app.listen(process.env.PORT || 4000, () => {
   console.log(

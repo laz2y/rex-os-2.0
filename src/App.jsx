@@ -5,10 +5,13 @@ import { useEffect } from "react";
 import "./App.css";
 
 import { ThemeProvider } from "./hooks/useTheme";
+import { AuthProvider } from "./hooks/useAuth";
+import RequireAuth from "./components/RequireAuth";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/dashboard/Header/Header";
 import BottomNav from "./components/BottomNav";
 
+import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Media from "./pages/Media";
 import Cloud from "./pages/Cloud";
@@ -41,26 +44,45 @@ function PageTransition() {
   );
 }
 
-export default function App() {
+/** The authenticated application shell (sidebar + header + pages). */
+function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
+    <div className="app">
+      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
+
+      <main className="content">
+        <Header onMenu={() => setMenuOpen(true)} />
+
+        <PageTransition />
+      </main>
+
+      <BottomNav />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
     <ThemeProvider>
       <BrowserRouter>
-        <div className="app">
+        <AuthProvider>
           {/* Selectable anime artwork layer (see themes/themeManager.js) */}
           <div className="theme-bg" aria-hidden="true" />
 
-          <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
-
-          <main className="content">
-            <Header onMenu={() => setMenuOpen(true)} />
-
-            <PageTransition />
-          </main>
-
-          <BottomNav />
-        </div>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/*"
+              element={
+                <RequireAuth>
+                  <AppShell />
+                </RequireAuth>
+              }
+            />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>
   );

@@ -6,6 +6,45 @@
   margin: 0 auto;
 }
 
+/* Greeting block — directly under the hero banner */
+.home-greeting {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 0 4px;
+}
+
+.home-greeting h2 {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.home-greeting p {
+  margin-top: 5px;
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.home-greeting-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding-bottom: 4px;
+}
+
+@media (max-width: 640px) {
+  .home-greeting h2 {
+    font-size: 24px;
+  }
+}
+
 /* Main control-center split: Jellyfin (main) + Docker overview */
 .home-main {
   display: grid;

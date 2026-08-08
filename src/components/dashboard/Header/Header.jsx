@@ -13,16 +13,9 @@ import useLiveClock from "../../../hooks/useLiveClock";
 import { config } from "../../../data/config";
 
 export default function Header({ onMenu }) {
-  const { time, date, hour } = useLiveClock();
+  const { time, date } = useLiveClock();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-
-  const greeting =
-    hour < 12
-      ? "Good Morning"
-      : hour < 18
-      ? "Good Afternoon"
-      : "Good Evening";
 
   function handleSearch(event) {
     event.preventDefault();
@@ -44,10 +37,10 @@ export default function Header({ onMenu }) {
           <Menu size={22} />
         </button>
 
-        <div>
-          <h1>
-            {greeting}, {config.userName} 👋
-          </h1>
+        <div className="header-meta">
+          <span className="header-brand">
+            {config.appName} <b>v{config.version}</b>
+          </span>
 
           <div className="header-date">
             <CalendarDays size={16} />
