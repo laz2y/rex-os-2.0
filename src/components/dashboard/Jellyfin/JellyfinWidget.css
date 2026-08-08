@@ -18,7 +18,7 @@ margin:25px 0;
 display:flex;
 align-items:center;
 gap:10px;
-font-size:28px;
+font-size:24px;
 }
 
 .jellyfin-header p{
@@ -44,7 +44,7 @@ height:8px;
 }
 
 .poster-row::-webkit-scrollbar-thumb{
-background:#2563eb;
+background:var(--primary);
 border-radius:999px;
 }
 
@@ -101,7 +101,7 @@ display:inline-flex;
 width:max-content;
 padding:6px 10px;
 border-radius:999px;
-background:#2563eb;
+background:var(--primary);
 font-size:12px;
 margin-bottom:10px;
 }
@@ -135,4 +135,12 @@ transition:.25s;
 
 .poster-overlay button:hover{
 transform:translateY(-2px);
+}
+
+/* Compact posters on phones */
+@media (max-width: 640px) {
+  .poster-card {
+    min-width: 150px;
+    height: 250px;
+  }
 }

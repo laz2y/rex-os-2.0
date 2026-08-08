@@ -28,7 +28,7 @@ overflow:hidden;
 
 transform:translateY(-8px);
 
-border-color:rgba(59,130,246,.35);
+border-color:rgba(var(--glow-rgb),.35);
 
 }
 
@@ -157,14 +157,33 @@ overflow:hidden;
 
 background:rgba(255,255,255,.07);
 
-}
-
-.progress-fill{
+}.progress-fill{
 
 height:100%;
 
 border-radius:999px;
-
 transition:width .7s ease;
 
+}
+
+/* Responsive stat grid */
+@media (max-width: 1180px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+}
+
+@media (max-width: 560px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    padding: 20px;
+  }
+
+  .stat-value {
+    font-size: 38px;
+  }
 }

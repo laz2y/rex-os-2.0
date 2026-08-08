@@ -810,3 +810,15 @@
 .spin {
   animation: spin 1s linear infinite;
 }
+
+/* Compact Jellyfin skeletons on phones */
+@media (max-width: 640px) {
+  .poster-sk {
+    min-width: 150px;
+    height: 250px;
+  }
+
+  .hero-sk {
+    height: 250px;
+  }
+}

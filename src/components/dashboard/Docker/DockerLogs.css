@@ -43,7 +43,7 @@ width:42px;
 height:42px;
 border:none;
 border-radius:12px;
-background:#2563eb;
+background:var(--primary);
 color:white;
 display:flex;
 justify-content:center;
@@ -53,7 +53,7 @@ transition:.2s;
 }
 
 .logs-actions button:hover{
-background:#1d4ed8;
+background:var(--primary-dark);
 }
 
 .logs-actions button:disabled{

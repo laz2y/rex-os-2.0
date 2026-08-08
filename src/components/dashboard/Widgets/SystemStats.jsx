@@ -104,7 +104,12 @@ export default function SystemStats({ system, docker, loading }) {
             </div>
 
             <div className="stat-footer">
-              <div className="stat-status">
+              <div
+                className="stat-status"
+                style={{
+                  color: stat.value > 85 ? "#ef4444" : "#22c55e",
+                }}
+              >
                 <TrendingUp size={15} />
                 {stat.value > 85 ? "Heavy" : "Healthy"}
               </div>

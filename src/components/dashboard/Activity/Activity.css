@@ -11,7 +11,7 @@ margin-bottom:18px;
 }
 
 .activity-header h2{
-font-size:26px;
+font-size:22px;
 }
 
 .activity-list{
@@ -31,14 +31,14 @@ transition:.25s;
 }
 
 .activity-item:hover{
-background:rgba(59,130,246,.08);
+background:rgba(var(--glow-rgb),.08);
 }
 
 .activity-icon{
 width:42px;
 height:42px;
 border-radius:12px;
-background:#2563eb;
+background:var(--primary);
 display:flex;
 align-items:center;
 justify-content:center;

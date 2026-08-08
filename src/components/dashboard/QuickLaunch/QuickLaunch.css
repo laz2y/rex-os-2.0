@@ -14,7 +14,7 @@ margin-bottom:22px;
 }
 
 .section-header h2{
-font-size:30px;
+font-size:24px;
 font-weight:700;
 }
 
@@ -54,9 +54,9 @@ color:white;
 
 transform:translateY(-6px);
 
-border-color:#3b82f6;
+border-color:var(--primary);
 
-background:rgba(59,130,246,.08);
+background:rgba(var(--glow-rgb),.08);
 
 }
 

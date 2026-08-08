@@ -38,7 +38,7 @@ padding:8px 14px;
 
 border-radius:999px;
 
-background:#2563eb;
+background:var(--primary);
 
 font-size:13px;
 
@@ -124,5 +124,55 @@ backdrop-filter:blur(10px);
 .info-btn:hover{
 
 background:rgba(255,255,255,.22);
+
+}
+
+/* Compact hero on phones */
+@media (max-width: 640px) {
+
+.hero-banner{
+
+height:250px;
+
+padding:24px;
+
+}
+
+.hero-badge{
+
+padding:6px 12px;
+
+margin-bottom:12px;
+
+}
+
+.hero-content h1{
+
+font-size:28px;
+
+}
+
+.hero-content p{
+
+font-size:14px;
+
+margin-bottom:18px;
+
+}
+
+.hero-buttons .info-btn{
+
+display:none;
+
+}
+
+.watch-btn,
+.info-btn{
+
+padding:11px 18px;
+
+font-size:14px;
+
+}
 
 }

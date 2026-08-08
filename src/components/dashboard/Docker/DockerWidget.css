@@ -12,7 +12,7 @@ margin-bottom:24px;
 }
 
 .docker-header h2{
-font-size:28px;
+font-size:24px;
 margin-bottom:6px;
 }
 
@@ -35,8 +35,8 @@ transition:.25s;
 }
 
 .docker-card:hover{
-background:rgba(59,130,246,.08);
-border-color:#3b82f6;
+background:rgba(var(--glow-rgb),.08);
+border-color:var(--primary);
 }
 
 .docker-card-top{
@@ -50,7 +50,7 @@ margin-bottom:18px;
 width:46px;
 height:46px;
 border-radius:14px;
-background:#2563eb;
+background:var(--primary);
 display:flex;
 align-items:center;
 justify-content:center;
