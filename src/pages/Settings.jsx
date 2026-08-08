@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 import { useTheme } from "../hooks/useTheme";
-import { getTheme } from "../core/themes/themeManager";
+import { resolveArtwork } from "../core/themes/artwork";
 import { config } from "../data/config";
 import { getConnections, testConnection } from "../api/connections";
 
@@ -56,6 +56,39 @@ const STATE_LABEL = {
   error: "Error",
 };
 
+/** Theme card thumbnail — resolves to the real artwork (upload or fallback). */
+function ArtworkThumb({ option }) {
+  const [src, setSrc] = useState(option.artwork || null);
+
+  useEffect(() => {
+    let active = true;
+    resolveArtwork(option.id).then((url) => {
+      if (active && url) setSrc(url);
+    });
+    return () => {
+      active = false;
+    };
+  }, [option.id]);
+
+  return (
+    <div
+      className="theme-art"
+      style={
+        src
+          ? {
+              backgroundImage: `linear-gradient(rgba(0,0,0,.25), rgba(0,0,0,.25)), url(${src})`,
+            }
+          : { background: "var(--theme-fallback)" }
+      }
+    >
+      <span className="preview-pill">Preview</span>
+      <span className="check">
+        <Check size={16} />
+      </span>
+    </div>
+  );
+}
+
 export default function Settings() {
   const { theme, themes, setTheme } = useTheme();
   const [statuses, setStatuses] = useState(idleStates);
@@ -63,19 +96,21 @@ export default function Settings() {
 
   // Live background preview: swap the artwork slot while hovering a card.
   const previewTheme = useCallback((option) => {
-    if (!option.artwork) return;
-    document.documentElement.style.setProperty(
-      "--theme-bg-image",
-      `url("${option.artwork}")`,
-    );
+    resolveArtwork(option.id).then((url) => {
+      document.documentElement.style.setProperty(
+        "--theme-bg-image",
+        url ? `url("${url}")` : "none",
+      );
+    });
   }, []);
 
   const clearPreview = useCallback(() => {
-    const active = getTheme(theme.id);
-    document.documentElement.style.setProperty(
-      "--theme-bg-image",
-      active.artwork ? `url("${active.artwork}")` : "none",
-    );
+    resolveArtwork(theme.id).then((url) => {
+      document.documentElement.style.setProperty(
+        "--theme-bg-image",
+        url ? `url("${url}")` : "none",
+      );
+    });
   }, [theme.id]);
 
   // Never leave a hover preview behind after leaving the page.
@@ -159,15 +194,15 @@ export default function Settings() {
       <section className="settings-section fade-up">
         <h2>
           <Palette size={18} /> Anime Themes
-        </h2>
-        <p>
-          Pick an atmosphere — hover a card to preview its background. Each
-          theme ships with original artwork loaded from{" "}
-          <code style={{ color: "white" }}>public/themes/</code> — drop your
-          own image over any{" "}
-          <code style={{ color: "white" }}>background.svg</code> (or point the
-          theme's artwork path at a PNG/JPG) to personalise it.
-        </p>
+        </h2>          <p>
+            Pick an atmosphere — hover a card to preview its background. To use
+            your own artwork, drop a file named{" "}
+            <code style={{ color: "white" }}>background.jpg</code>,{" "}
+            <code style={{ color: "white" }}>background.png</code> or{" "}
+            <code style={{ color: "white" }}>background.webp</code> into{" "}
+            <code style={{ color: "white" }}>public/themes/&#123;luffy|naruto|goku|rex&#125;/</code>{" "}
+            and refresh — REX OS picks it up automatically.
+          </p>
 
         <div className="theme-grid">
           {themes.map((option, index) => (
@@ -186,21 +221,7 @@ export default function Settings() {
               onMouseLeave={clearPreview}
               aria-pressed={theme.id === option.id}
             >
-              <div
-                className="theme-art"
-                style={
-                  option.artwork
-                    ? {
-                        backgroundImage: `linear-gradient(rgba(0,0,0,.25), rgba(0,0,0,.25)), url(${option.artwork})`,
-                      }
-                    : { background: "var(--theme-fallback)" }
-                }
-              >
-                <span className="preview-pill">Preview</span>
-                <span className="check">
-                  <Check size={16} />
-                </span>
-              </div>
+              <ArtworkThumb option={option} />
 
               <div className="theme-body">
                 <div

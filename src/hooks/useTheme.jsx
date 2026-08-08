@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import { THEMES, getTheme } from "../core/themes/themeManager";
+import { setThemeArtwork } from "../core/themes/artwork";
 
 const STORAGE_KEY = "rexos-theme";
 
@@ -32,6 +33,10 @@ export function ThemeProvider({ children }) {
     } catch {
       /* ignore */
     }
+
+    // Point the background at the theme's real artwork (user upload wins over
+    // the bundled SVG fallback — see core/themes/artwork.js).
+    setThemeArtwork(theme.id);
 
     // Crossfade the background artwork when switching themes.
     const bg = document.querySelector(".theme-bg");
