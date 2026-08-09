@@ -1,0 +1,7 @@
+# REX OS 2.0 release excludes — never ship credentials or dev artifacts.
+backend/node_modules
+backend/.env
+backend/.auth-secrets.json
+backend/.env.local
+backend/.env.example
+*.log
