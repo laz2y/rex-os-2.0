@@ -6,6 +6,6 @@ backend/.env.local
 backend/.env.example
 *.log
 
-# The release archive itself (public/ copy is for in-app download only).
-public/rexos-2.0-release.tar.gz
-dist/rexos-2.0-release.tar.gz
+# The release archive itself (public/assets copy is for the Freebuff Assets panel only).
+public/assets/rexos-2.0-release.tar.gz
+dist/assets/rexos-2.0-release.tar.gz
