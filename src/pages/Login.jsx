@@ -1,6 +1,6 @@
 import "./Login.css";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import {
   AlertTriangle,
@@ -13,6 +13,7 @@ import {
 
 import { useAuth } from "../hooks/useAuth";
 import { config } from "../data/config";
+import { setSlotArtwork } from "../core/themes/artwork";
 import BootScreen from "../components/BootScreen";
 
 export default function Login() {
@@ -32,6 +33,21 @@ export default function Login() {
   // so the app never flashes its content a moment too early.
   const [entering, setEntering] = useState(false);
   const [entered, setEntered] = useState(false);
+
+  // Full-screen LOGIN wallpaper (public/themes/login/background.* or
+  // login.*). When no login image has been uploaded the property is removed
+  // and CSS falls back to the active theme artwork — see core/themes/artwork.js.
+  useEffect(() => {
+    let active = true;
+    setSlotArtwork("login", "--login-bg-image").then(() => {
+      if (!active) {
+        document.documentElement.style.removeProperty("--login-bg-image");
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Already signed in.
   if (!checking && user) {
@@ -77,6 +93,8 @@ export default function Login() {
 
   return (
     <div className="login-page">
+      <div className="login-bg" aria-hidden="true" />
+
       <div className="login-card fade-up">
         <div className="login-brand">
           <div className="login-logo">⚓</div>

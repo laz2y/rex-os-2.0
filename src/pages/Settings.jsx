@@ -201,7 +201,11 @@ export default function Settings() {
             <code style={{ color: "white" }}>background.png</code> or{" "}
             <code style={{ color: "white" }}>background.webp</code> into{" "}
             <code style={{ color: "white" }}>public/themes/&#123;rex|luffy|naruto|goku|trio&#125;/</code>{" "}
-            and refresh — REX OS picks it up automatically.
+            and refresh — REX OS picks it up automatically. The Login screen
+            reads <code style={{ color: "white" }}>public/themes/login/</code>{" "}
+            and the Home banner reads{" "}
+            <code style={{ color: "white" }}>public/themes/banner/</code>{" "}
+            with the same naming rules.
           </p>
 
         <div className="theme-grid">

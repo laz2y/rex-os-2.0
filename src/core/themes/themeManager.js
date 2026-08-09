@@ -10,10 +10,12 @@
  *   public/themes/goku/background.svg
  *   public/themes/trio/background.svg   (Luffy + Naruto + Goku combined)
  *
- * The artwork is original vector character art (1600x900 landscape) so
- * every theme has a real visual identity. Drop your own image over any of
- * those files (or swap the `artwork` path below for a PNG/JPG) and the
- * dashboard artwork updates automatically.
+ * Uploaded images are preferred automatically by the artwork resolver
+ * (core/themes/artwork.js): drop `background.jpg`/`background.png`/… into
+ * any theme folder (or the `login` and `banner` slots) and every surface —
+ * dashboard background, Home hero, Login page and Settings previews — uses
+ * them without touching this file. The `artwork` values below are only the
+ * built-in SVG fallbacks.
  */
 export const THEMES = [
   {

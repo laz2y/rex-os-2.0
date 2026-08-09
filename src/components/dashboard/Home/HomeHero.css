@@ -14,16 +14,22 @@
   box-shadow: var(--shadow);
 }
 
-/* Blurred theme artwork backdrop (never distorted, stays 16:9-ish) */
+/* Blurred artwork backdrop — the dedicated `banner` image when uploaded,
+   otherwise the active theme's artwork (never distorted, stays 16:9-ish). */
 .home-hero-bg {
   position: absolute;
   inset: -24px;
-  background-image: var(--theme-bg-image);
+  background-image: var(--banner-bg-image, var(--theme-bg-image));
   background-size: cover;
   background-position: center;
   filter: blur(14px);
   transform: scale(1.15);
   opacity: 0.9;
+  transition: opacity 0.5s ease;
+}
+
+.home-hero-bg.has-banner {
+  opacity: 1;
 }
 
 /* Readability overlay */
