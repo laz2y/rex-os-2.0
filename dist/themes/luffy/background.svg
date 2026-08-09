@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a0509"/>
+      <stop offset="0.5" stop-color="#7c150f"/>
+      <stop offset="0.82" stop-color="#c93b1e"/>
+      <stop offset="1" stop-color="#e8632b"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffd9a0" stop-opacity="0.95"/>
+      <stop offset="0.4" stop-color="#ff8a3d" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#ff4a1f" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8c1d14"/>
+      <stop offset="0.3" stop-color="#4a0d0e"/>
+      <stop offset="1" stop-color="#140406"/>
+    </linearGradient>
+    <linearGradient id="shimmer" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff9a5e" stop-opacity="0.65"/>
+      <stop offset="1" stop-color="#ff9a5e" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="hatShade" cx="0.5" cy="1" r="0.9">
+      <stop offset="0" stop-color="#6d3f10" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#6d3f10" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <circle cx="1240" cy="400" r="320" fill="url(#sun)"/>
+
+  <!-- sea -->
+  <rect x="0" y="640" width="1600" height="260" fill="url(#sea)"/>
+  <path d="M 1080 660 L 1460 660 L 1360 900 L 930 900 Z" fill="url(#shimmer)"/>
+  <g stroke="#ffb47e" stroke-width="3" opacity="0.35" fill="none">
+    <path d="M 1000 700 Q 1240 690 1500 710"/>
+    <path d="M 960 745 Q 1240 735 1510 755"/>
+    <path d="M 920 800 Q 1240 788 1520 812"/>
+  </g>
+
+  <!-- ship silhouette -->
+  <g fill="#1c0505" opacity="0.9">
+    <path d="M 205 745 L 300 880 L 118 880 Z"/>
+    <path d="M 252 745 L 226 540 L 330 540 L 290 745 Z"/>
+    <path d="M 96 880 L 322 880 L 300 900 L 60 900 Z"/>
+  </g>
+  <path d="M 205 745 L 300 880" stroke="#ff9a5e" stroke-width="3" opacity="0.5" fill="none"/>
+
+  <!-- ============ LUFFY — straw hat bust ============ -->
+  <g>
+    <!-- hat dome -->
+    <path d="M 755 470 Q 1010 150 1265 470 Z" fill="#e2c186"/>
+    <path d="M 800 445 Q 1010 330 1220 445 L 1220 480 Q 1010 360 800 480 Z" fill="url(#hatShade)"/>
+    <!-- brim -->
+    <ellipse cx="1010" cy="490" rx="288" ry="62" fill="#d9b877"/>
+    <ellipse cx="1010" cy="502" rx="288" ry="60" fill="#c69a5e" opacity="0.55"/>
+    <!-- red band -->
+    <path d="M 806 442 Q 1010 322 1214 442" stroke="#c62828" stroke-width="30" fill="none"/>
+    <path d="M 806 442 Q 1010 322 1214 442" stroke="#e05a5a" stroke-width="8" fill="none" opacity="0.5"/>
+    <circle cx="790" cy="452" r="17" fill="#c62828"/>
+
+    <!-- hair spikes under the brim -->
+    <g fill="#191008">
+      <path d="M 826 508 Q 802 452 836 428 L 862 470 Z"/>
+      <path d="M 860 470 Q 856 414 906 420 L 900 470 Z"/>
+      <path d="M 938 470 L 950 414 L 986 452 Z"/>
+      <path d="M 986 452 L 1002 406 L 1038 450 Z"/>
+      <path d="M 1038 450 L 1062 412 L 1084 468 Z"/>
+      <path d="M 1082 468 Q 1112 424 1152 430 L 1138 474 Z"/>
+      <path d="M 1136 474 Q 1188 450 1198 498 L 1162 508 Z"/>
+    </g>
+
+    <!-- face -->
+    <ellipse cx="1010" cy="588" rx="112" ry="130" fill="#f7c9a3"/>
+    <!-- neck -->
+    <path d="M 962 692 Q 1010 708 1058 692 L 1058 776 L 962 776 Z" fill="#eeb488"/>
+
+    <!-- eyes -->
+    <ellipse cx="948" cy="566" rx="21" ry="24" fill="#241310"/>
+    <ellipse cx="950" cy="568" rx="13" ry="16" fill="#6b2f1c"/>
+    <circle cx="943" cy="560" r="6" fill="#fff"/>
+    <circle cx="957" cy="574" r="3" fill="#fff" opacity="0.8"/>
+    <ellipse cx="1072" cy="566" rx="21" ry="24" fill="#241310"/>
+    <ellipse cx="1070" cy="568" rx="13" ry="16" fill="#6b2f1c"/>
+    <circle cx="1065" cy="560" r="6" fill="#fff"/>
+    <circle cx="1079" cy="574" r="3" fill="#fff" opacity="0.8"/>
+
+    <!-- brows -->
+    <path d="M 916 520 Q 948 502 980 522" stroke="#2b1a12" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <path d="M 1040 522 Q 1072 502 1104 520" stroke="#2b1a12" stroke-width="10" stroke-linecap="round" fill="none"/>
+
+    <!-- scar under the left eye -->
+    <path d="M 906 606 Q 932 626 948 613" stroke="#b06a28" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+
+    <!-- nose + big grin -->
+    <path d="M 1006 598 Q 1015 602 1007 608" stroke="#d98d5f" stroke-width="4" stroke-linecap="round" fill="none"/>
+    <path d="M 975 668 Q 1010 706 1045 668 Q 1010 736 975 668 Z" fill="#4a1608"/>
+    <path d="M 938 660 Q 1010 716 1082 660" stroke="#7a2a12" stroke-width="9" stroke-linecap="round" fill="none"/>
+
+    <!-- vest + chest -->
+    <path d="M 820 900 Q 795 795 955 762 Q 1010 750 1065 762 Q 1225 795 1200 900 Z" fill="#c62828"/>
+    <path d="M 1010 752 L 928 900 L 1092 900 Z" fill="#f2b98c"/>
+    <path d="M 1010 752 L 928 900" stroke="#9c1c1c" stroke-width="7" stroke-linecap="round" fill="none"/>
+    <path d="M 1010 752 L 1092 900" stroke="#9c1c1c" stroke-width="7" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- sparkle particles -->
+  <g fill="#ffd9a0" opacity="0.8">
+    <path d="M 240 210 l 6 16 16 6 -16 6 -6 16 -6 -16 -16 -6 16 -6 Z"/>
+    <path d="M 620 150 l 5 13 13 5 -13 5 -5 13 -5 -13 -13 -5 13 -5 Z" opacity="0.7"/>
+    <path d="M 1450 240 l 5 13 13 5 -13 5 -5 13 -5 -13 -13 -5 13 -5 Z" opacity="0.6"/>
+    <circle cx="360" cy="330" r="4" opacity="0.6"/>
+    <circle cx="700" cy="220" r="3" opacity="0.5"/>
+    <circle cx="1330" cy="180" r="4" opacity="0.55"/>
+    <circle cx="1500" cy="420" r="3" opacity="0.5"/>
+  </g>
+
+  <!-- warm vignette behind the character -->
+  <circle cx="1010" cy="560" r="430" fill="#ff4a1f" opacity="0.14" filter="url(#soft)"/>
+</svg>

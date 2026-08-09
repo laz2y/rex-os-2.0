@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#030a1c"/>
+      <stop offset="0.5" stop-color="#0c2452"/>
+      <stop offset="0.82" stop-color="#1e4f96"/>
+      <stop offset="1" stop-color="#4aa0f0"/>
+    </linearGradient>
+    <radialGradient id="aura" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffd75e" stop-opacity="0.95"/>
+      <stop offset="0.3" stop-color="#ffb020" stop-opacity="0.55"/>
+      <stop offset="0.6" stop-color="#ff8a00" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#ff8a00" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="dragonGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffe9a8" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mountain" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a1730"/>
+      <stop offset="1" stop-color="#040a18"/>
+    </linearGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#sky)"/>
+
+  <!-- clouds -->
+  <g fill="#d7e6ff" opacity="0.16">
+    <ellipse cx="320" cy="240" rx="190" ry="30"/>
+    <ellipse cx="380" cy="224" rx="130" ry="24"/>
+    <ellipse cx="1290" cy="330" rx="210" ry="32"/>
+    <ellipse cx="1230" cy="312" rx="140" ry="26"/>
+    <ellipse cx="240" cy="560" rx="170" ry="26"/>
+  </g>
+
+  <!-- dragon coiling through the sky -->
+  <g>
+    <circle cx="520" cy="300" r="300" fill="url(#dragonGlow)"/>
+    <path d="M 150 300 Q 360 120 620 240 Q 900 370 1180 250 Q 1400 160 1520 280"
+          stroke="#2f8f4e" stroke-width="44" fill="none" stroke-linecap="round"/>
+    <path d="M 150 300 Q 360 120 620 240 Q 900 370 1180 250 Q 1400 160 1520 280"
+          stroke="#9fd97f" stroke-width="18" fill="none" stroke-linecap="round" opacity="0.8"/>
+    <circle cx="620" cy="240" r="34" fill="#2f8f4e"/>
+    <circle cx="620" cy="240" r="18" fill="#123c22"/>
+    <g stroke="#2f8f4e" stroke-width="8" stroke-linecap="round" fill="none">
+      <path d="M 588 214 L 556 180"/>
+      <path d="M 652 214 L 684 180"/>
+    </g>
+    <g fill="#2f8f4e" opacity="0.9">
+      <path d="M 130 300 q -30 -20 -18 -44 q 26 8 18 44 Z"/>
+      <path d="M 170 330 q -38 -14 -34 -42 q 30 4 34 42 Z"/>
+      <path d="M 1510 290 q 26 -22 40 -8 q -18 22 -40 8 Z"/>
+    </g>
+    <g fill="#ffe9a8" opacity="0.8">
+      <circle cx="430" cy="210" r="4"/>
+      <circle cx="760" cy="330" r="4"/>
+      <circle cx="1050" cy="290" r="4"/>
+      <circle cx="1350" cy="200" r="4"/>
+    </g>
+  </g>
+
+  <!-- mountains -->
+  <path d="M 0 900 L 0 640 L 260 520 L 520 660 L 800 540 L 1080 680 L 1330 560 L 1600 700 L 1600 900 Z" fill="url(#mountain)" opacity="0.95"/>
+
+  <!-- ============ GOKU — saiyan bust ============ -->
+  <g>
+    <!-- golden aura -->
+    <ellipse cx="800" cy="560" rx="430" ry="420" fill="url(#aura)"/>
+    <path d="M 800 130 L 830 300 L 900 180 L 880 340 L 1020 260 L 950 420 L 1130 400 L 1000 500 L 1210 560 L 1000 620 L 1120 760 L 920 690 L 940 880 L 800 760 L 660 880 L 680 690 L 480 760 L 600 620 L 390 560 L 600 500 L 470 400 L 650 420 L 580 260 L 720 340 L 700 180 L 770 300 Z"
+          fill="#ffb020" opacity="0.5" filter="url(#soft)"/>
+
+    <!-- spiky hair -->
+    <g fill="#16130f">
+      <path d="M 738 470 L 706 332 L 772 426 Z"/>
+      <path d="M 764 424 L 762 300 L 812 420 Z"/>
+      <path d="M 806 418 L 830 312 L 860 428 Z"/>
+      <path d="M 856 428 L 906 350 L 902 446 Z"/>
+      <path d="M 898 446 L 946 426 L 920 472 Z"/>
+      <path d="M 740 472 L 692 442 L 720 488 Z"/>
+      <path d="M 720 488 L 676 480 L 706 510 Z"/>
+      <path d="M 918 470 L 962 482 L 932 510 Z"/>
+    </g>
+
+    <!-- face -->
+    <ellipse cx="800" cy="562" rx="100" ry="118" fill="#f8c9a0"/>
+    <!-- neck -->
+    <path d="M 762 664 Q 800 680 838 664 L 838 748 L 762 748 Z" fill="#edb085"/>
+
+    <!-- eyes -->
+    <ellipse cx="750" cy="548" rx="19" ry="22" fill="#1c1a18"/>
+    <ellipse cx="751" cy="550" rx="11" ry="14" fill="#2b6cb0"/>
+    <circle cx="745" cy="542" r="5" fill="#fff"/>
+    <ellipse cx="850" cy="548" rx="19" ry="22" fill="#1c1a18"/>
+    <ellipse cx="849" cy="550" rx="11" ry="14" fill="#2b6cb0"/>
+    <circle cx="843" cy="542" r="5" fill="#fff"/>
+
+    <!-- fierce brows -->
+    <path d="M 706 502 L 776 508" stroke="#222" stroke-width="9" stroke-linecap="round"/>
+    <path d="M 894 502 L 824 508" stroke="#222" stroke-width="9" stroke-linecap="round"/>
+
+    <!-- determined shout -->
+    <path d="M 780 632 Q 800 692 820 632 Q 800 710 780 632 Z" fill="#3d1a10"/>
+    <path d="M 748 626 Q 800 668 852 626" stroke="#7a2a12" stroke-width="8" stroke-linecap="round" fill="none"/>
+
+    <!-- raised fists -->
+    <path d="M 606 806 Q 586 744 566 708" stroke="#f8c9a0" stroke-width="34" stroke-linecap="round" fill="none"/>
+    <circle cx="564" cy="696" r="34" fill="#f8c9a0"/>
+    <path d="M 994 806 Q 1014 744 1034 708" stroke="#f8c9a0" stroke-width="34" stroke-linecap="round" fill="none"/>
+    <circle cx="1036" cy="696" r="34" fill="#f8c9a0"/>
+
+    <!-- gi -->
+    <path d="M 642 900 Q 622 788 748 750 Q 800 738 852 750 Q 978 788 958 900 Z" fill="#f97316"/>
+    <path d="M 800 744 L 706 828 L 894 828 Z" fill="#1d4ed8"/>
+    <path d="M 800 744 L 736 800 L 774 810 Z" fill="#ea580c"/>
+    <path d="M 800 744 L 864 800 L 826 810 Z" fill="#ea580c"/>
+    <path d="M 738 830 Q 800 806 862 830" stroke="#d95f0e" stroke-width="7" fill="none" opacity="0.7"/>
+  </g>
+
+  <!-- energy sparks -->
+  <g fill="#ffe9a8" opacity="0.85">
+    <path d="M 560 260 l 5 14 14 5 -14 5 -5 14 -5 -14 -14 -5 14 -5 Z"/>
+    <path d="M 1040 220 l 5 14 14 5 -14 5 -5 14 -5 -14 -14 -5 14 -5 Z" opacity="0.7"/>
+    <path d="M 430 480 l 4 11 11 4 -11 4 -4 11 -4 -11 -11 -4 11 -4 Z" opacity="0.6"/>
+    <circle cx="1160" cy="470" r="4" opacity="0.7"/>
+    <circle cx="480" cy="360" r="3" opacity="0.6"/>
+    <circle cx="980" cy="150" r="4" opacity="0.6"/>
+  </g>
+</svg>

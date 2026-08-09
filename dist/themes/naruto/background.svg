@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#170b02"/>
+      <stop offset="0.45" stop-color="#4a2307"/>
+      <stop offset="0.78" stop-color="#b05c0e"/>
+      <stop offset="1" stop-color="#f5911e"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffe3a3" stop-opacity="0.95"/>
+      <stop offset="0.4" stop-color="#ffb347" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="villageGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ff9a2e" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#ff9a2e" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="land" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b1003"/>
+      <stop offset="1" stop-color="#120500"/>
+    </linearGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <circle cx="1180" cy="430" r="330" fill="url(#sun)"/>
+  <circle cx="1180" cy="430" r="470" fill="url(#villageGlow)"/>
+
+  <!-- clouds -->
+  <g fill="#c96a14" opacity="0.35">
+    <ellipse cx="300" cy="210" rx="180" ry="26"/>
+    <ellipse cx="360" cy="196" rx="120" ry="22"/>
+    <ellipse cx="1350" cy="250" rx="200" ry="28"/>
+    <ellipse cx="1290" cy="236" rx="130" ry="22"/>
+  </g>
+
+  <!-- village rooftops + hokage cliff -->
+  <g fill="url(#land)">
+    <path d="M 0 900 L 0 700 Q 120 690 240 700 L 300 900 Z"/>
+    <path d="M 220 700 L 300 640 L 380 700 L 340 900 L 240 900 Z"/>
+    <path d="M 360 670 L 440 610 L 520 670 L 500 900 L 380 900 Z"/>
+    <path d="M 1000 900 L 1030 650 Q 1130 580 1240 600 L 1320 640 L 1360 900 Z"/>
+    <path d="M 1320 640 Q 1420 620 1520 660 L 1600 700 L 1600 900 L 1360 900 Z"/>
+  </g>
+  <g stroke="#ff9a2e" stroke-width="3" opacity="0.4" fill="none">
+    <path d="M 220 700 L 300 640 L 380 700"/>
+    <path d="M 360 670 L 440 610 L 520 670"/>
+    <path d="M 1030 650 Q 1130 580 1240 600 L 1320 640"/>
+  </g>
+  <!-- cliff faces -->
+  <g fill="#3a1a05" opacity="0.9">
+    <circle cx="1180" cy="660" r="40"/>
+    <circle cx="1270" cy="652" r="44"/>
+    <circle cx="1365" cy="662" r="38"/>
+  </g>
+
+  <!-- ============ NARUTO — ninja bust ============ -->
+  <g>
+    <!-- spiky hair -->
+    <g fill="#ffce4d">
+      <path d="M 742 470 L 718 348 L 788 428 Z"/>
+      <path d="M 782 426 L 778 306 L 830 424 Z"/>
+      <path d="M 826 422 L 846 326 L 878 432 Z"/>
+      <path d="M 874 432 L 908 360 L 918 448 Z"/>
+      <path d="M 916 448 L 952 430 L 934 476 Z"/>
+      <path d="M 746 472 L 700 452 L 726 492 Z"/>
+      <path d="M 726 492 L 682 486 L 712 512 Z"/>
+      <path d="M 920 470 L 962 480 L 934 506 Z"/>
+    </g>
+    <g stroke="#d9a02c" stroke-width="5" stroke-linejoin="round" fill="none" opacity="0.6">
+      <path d="M 742 470 L 718 348 L 788 428 Z"/>
+      <path d="M 782 426 L 778 306 L 830 424 Z"/>
+      <path d="M 826 422 L 846 326 L 878 432 Z"/>
+    </g>
+
+    <!-- face -->
+    <ellipse cx="800" cy="568" rx="102" ry="120" fill="#f8c9a0"/>
+    <!-- neck -->
+    <path d="M 760 672 Q 800 686 840 672 L 840 758 L 760 758 Z" fill="#edb085"/>
+
+    <!-- whisker marks -->
+    <g stroke="#c98a4e" stroke-width="4.5" stroke-linecap="round">
+      <path d="M 708 572 L 690 568"/>
+      <path d="M 708 586 L 688 584"/>
+      <path d="M 708 600 L 691 600"/>
+      <path d="M 892 572 L 910 568"/>
+      <path d="M 892 586 L 912 584"/>
+      <path d="M 892 600 L 909 600"/>
+    </g>
+
+    <!-- eyes -->
+    <ellipse cx="746" cy="552" rx="20" ry="24" fill="#eaf4ff"/>
+    <ellipse cx="747" cy="554" rx="13" ry="16" fill="#2f6fd8"/>
+    <circle cx="741" cy="547" r="6" fill="#fff"/>
+    <ellipse cx="854" cy="552" rx="20" ry="24" fill="#eaf4ff"/>
+    <ellipse cx="853" cy="554" rx="13" ry="16" fill="#2f6fd8"/>
+    <circle cx="847" cy="547" r="6" fill="#fff"/>
+
+    <!-- forehead protector + flowing cloth -->
+    <path d="M 690 484 Q 800 442 910 484 L 922 510 Q 800 472 678 510 Z" fill="#2f6fd8"/>
+    <path d="M 910 490 Q 966 500 980 548 L 946 554 Q 932 512 906 506 Z" fill="#2f6fd8"/>
+    <rect x="762" y="456" width="76" height="46" rx="9" fill="#cfd6de"/>
+    <rect x="762" y="456" width="76" height="46" rx="9" fill="none" stroke="#9aa4b1" stroke-width="5"/>
+    <path d="M 796 472 Q 802 492 800 492 Q 798 492 800 478 Z" fill="#4a9a2e"/>
+    <path d="M 806 470 Q 812 490 810 492 Q 808 492 810 478 Z" fill="#4a9a2e"/>
+
+    <!-- brows -->
+    <path d="M 700 508 Q 746 492 788 506" stroke="#5a3a1a" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <path d="M 812 506 Q 854 492 900 508" stroke="#5a3a1a" stroke-width="9" stroke-linecap="round" fill="none"/>
+
+    <!-- grin -->
+    <path d="M 770 642 Q 800 700 830 642 Q 800 714 770 642 Z" fill="#4a1608"/>
+    <path d="M 738 636 Q 800 700 862 636" stroke="#7a2a12" stroke-width="9" stroke-linecap="round" fill="none"/>
+
+    <!-- tracksuit -->
+    <path d="M 636 900 Q 618 786 748 750 Q 800 738 852 750 Q 982 786 964 900 Z" fill="#f97316"/>
+    <path d="M 800 744 L 742 800 L 786 810 Z" fill="#1e293b"/>
+    <path d="M 800 744 L 858 800 L 814 810 Z" fill="#1e293b"/>
+    <path d="M 800 744 L 800 900" stroke="#fff" stroke-width="4" fill="none" opacity="0.85"/>
+    <path d="M 736 830 Q 800 806 864 830" stroke="#d95f0e" stroke-width="7" fill="none" opacity="0.7"/>
+  </g>
+
+  <!-- floating leaves -->
+  <g fill="#e0690d" opacity="0.85">
+    <path d="M 320 480 q 10 -18 26 -16 q -6 18 -26 16 Z"/>
+    <path d="M 1380 420 q 12 -20 30 -18 q -7 20 -30 18 Z" opacity="0.7"/>
+    <path d="M 560 330 q 8 -15 22 -13 q -5 15 -22 13 Z" opacity="0.6"/>
+    <path d="M 1180 320 q 9 -16 24 -14 q -6 16 -24 14 Z" opacity="0.65"/>
+    <path d="M 400 620 q 8 -15 22 -13 q -5 15 -22 13 Z" opacity="0.5"/>
+  </g>
+
+  <!-- warm vignette behind the character -->
+  <circle cx="800" cy="560" r="430" fill="#ff7a1a" opacity="0.13" filter="url(#soft)"/>
+</svg>
