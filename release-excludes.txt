@@ -5,3 +5,7 @@ backend/.auth-secrets.json
 backend/.env.local
 backend/.env.example
 *.log
+
+# The release archive itself (public/ copy is for in-app download only).
+public/rexos-2.0-release.tar.gz
+dist/rexos-2.0-release.tar.gz
