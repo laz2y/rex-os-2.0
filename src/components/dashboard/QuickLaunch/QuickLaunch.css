@@ -15,12 +15,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 16px;
 }
 
 .section-header h2 {
   font-size: 24px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .section-header span {
@@ -28,14 +30,96 @@
   color: var(--text-secondary);
 }
 
-.launch-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+/* Carousel controls in the header */
+.launch-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.launch-arrows {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.launch-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
+.launch-arrow:hover:not(:disabled) {
+  background: rgba(var(--glow-rgb), 0.16);
+  border-color: rgba(var(--glow-rgb), 0.55);
+  color: #fff;
+  transform: scale(1.06);
+}
+
+.launch-arrow:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.launch-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.launch-arrow:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Horizontal carousel track */
+.launch-track {
+  display: flex;
   gap: 18px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  touch-action: pan-y;
+  cursor: grab;
+  /* vertical padding so hover lift + shadows are not clipped by the
+     scroll container; negative margin keeps the row flush with the panel */
+  padding: 10px 2px 24px;
+  margin: -10px -2px -24px;
+  border-radius: 12px;
+  scroll-behavior: auto;
+}
+
+.launch-track::-webkit-scrollbar {
+  display: none;
+}
+
+.launch-track:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.launch-track.dragging {
+  scroll-snap-type: none;
+  cursor: grabbing;
+  user-select: none;
 }
 
 /* Premium glassy service tile */
 .launch-card {
+  flex: 0 0 clamp(170px, calc((100% - 4 * 18px) / 5), 225px);
+  scroll-snap-align: start;
+
+  cursor: pointer;
+
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -80,6 +164,18 @@
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35),
     0 0 24px rgba(var(--glow-rgb), 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.launch-track.dragging .launch-card:hover {
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.09);
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.02) 60%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 28px rgba(0, 0, 0, 0.28);
 }
 
 /* Glossy neon service icon */
@@ -127,6 +223,13 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.32);
 }
 
+.launch-track.dragging .launch-card:hover .launch-icon {
+  transform: none;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -10px 18px rgba(0, 0, 0, 0.2);
+}
+
 .launch-title {
   font-size: 15px;
 
@@ -137,14 +240,35 @@
   text-align: center;
 }
 
-/* 2-column Quick Launch on phones */
+/* ---- Responsive card counts ---- */
+
+/* Small tablets: ~3 cards visible */
+@media (max-width: 1000px) {
+  .launch-card {
+    flex-basis: clamp(150px, calc((100% - 2 * 18px) / 3), 210px);
+  }
+}
+
+/* Phones: ~1.6 cards visible so the next app peeks in */
 @media (max-width: 640px) {
-  .launch-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .quick-launch {
+    padding: 18px;
+  }
+
+  .section-header h2 {
+    font-size: 20px;
+  }
+
+  .launch-track {
     gap: 10px;
+    margin: -10px -6px -24px -2px;
+    padding: 10px 6px 24px 2px;
   }
 
   .launch-card {
+    flex: 0 0 calc((100% - 18px) / 1.6);
+    scroll-snap-align: start;
+
     flex-direction: row;
 
     justify-content: flex-start;
@@ -170,11 +294,8 @@
     text-align: left;
   }
 
-  .quick-launch {
-    padding: 18px;
-  }
-
-  .section-header h2 {
-    font-size: 20px;
+  .launch-arrow {
+    width: 30px;
+    height: 30px;
   }
 }

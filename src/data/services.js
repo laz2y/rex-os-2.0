@@ -5,6 +5,10 @@ import {
   Boxes,
   Download,
   Shield,
+  Tv,
+  Film,
+  Search,
+  Sailboat,
 } from "lucide-react";
 
 export const services = [
@@ -66,5 +70,45 @@ export const services = [
     color: "#14b8a6",
     url: "https://homepage.laz2ynas.cc",
     category: "system",
+  },
+
+  {
+    id: "sonarr",
+    name: "Sonarr",
+    description: "TV Series",
+    icon: Tv,
+    color: "#f43f5e",
+    url: "https://sonarr.laz2ynas.cc",
+    category: "media",
+  },
+
+  {
+    id: "radarr",
+    name: "Radarr",
+    description: "Movies",
+    icon: Film,
+    color: "#eab308",
+    url: "https://radarr.laz2ynas.cc",
+    category: "media",
+  },
+
+  {
+    id: "prowlarr",
+    name: "Prowlarr",
+    description: "Indexers",
+    icon: Search,
+    color: "#06b6d4",
+    url: "https://prowlarr.laz2ynas.cc",
+    category: "downloads",
+  },
+
+  {
+    id: "jackett",
+    name: "Jackett",
+    description: "Torrent Proxies",
+    icon: Sailboat,
+    color: "#a3e635",
+    url: "https://jackett.laz2ynas.cc",
+    category: "downloads",
   },
 ];
