@@ -71,6 +71,28 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+// Production: serve the built frontend (../dist) from the same process so a
+// single `node server.js` hosts both the REX OS UI and the /api backend.
+// Registered before the JSON root route so / serves the app shell in
+// production; guarded so it is skipped when dist/ is absent (pure API).
+const distDir = path.join(__dirname, "..", "dist");
+const fs = require("fs");
+if (fs.existsSync(distDir)) {
+  // Real files (assets, index.html, favicon) win; then the SPA fallback
+  // serves the app shell for unknown non-/api GET paths.
+  app.use(express.static(distDir));
+  app.use((req, res, next) => {
+    if (req.method !== "GET" || req.path.startsWith("/api")) {
+      return next();
+    }
+    res.sendFile(path.join(distDir, "index.html"));
+  });
+  console.log(`🖥️  Serving REX OS UI from ${distDir}`);
+}
+
+// API-only mode (no dist/): the root returns API info. In production the
+// static block above already answered / with the app shell, so this route
+// is only reachable when the UI build is absent.
 app.get("/", (req, res) => {
   res.json({
     app: "REX API",
