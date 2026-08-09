@@ -4,18 +4,18 @@
  * Each theme maps to a `data-theme` attribute that flips CSS accent
  * variables (see src/styles/theme.css) and a local artwork file:
  *
- *   public/themes/rex/background.svg
- *   public/themes/luffy/background.svg
- *   public/themes/naruto/background.svg
- *   public/themes/goku/background.svg
- *   public/themes/trio/background.svg   (Luffy + Naruto + Goku combined)
+ *   public/assets/goku.png       → goku theme
+ *   public/assets/luffy.png      → luffy theme
+ *   public/assets/naruto.png     → naruto theme
+ *   public/assets/all_three.png  → trio theme (Luffy + Naruto + Goku combined)
+ *   public/assets/background.png → login page background
+ *   public/assets/banner.png     → home hero banner
  *
- * Uploaded images are preferred automatically by the artwork resolver
- * (core/themes/artwork.js): drop `background.jpg`/`background.png`/… into
- * any theme folder (or the `login` and `banner` slots) and every surface —
- * dashboard background, Home hero, Login page and Settings previews — uses
- * them without touching this file. The `artwork` values below are only the
- * built-in SVG fallbacks.
+ * Uploaded assets are preferred automatically by the artwork resolver
+ * (core/themes/artwork.js). Per-theme folders at public/themes/<id>/ (e.g.
+ * `background.jpg`/`background.png`/…) and the built-in SVG scenery remain
+ * as fallbacks, and the `rex` theme keeps its existing artwork. The
+ * `artwork` values below are only the built-in SVG fallbacks.
  */
 export const THEMES = [
   {

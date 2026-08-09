@@ -1,18 +1,25 @@
 /**
  * REX OS artwork resolution.
  *
- * Each theme has a folder at public/themes/<id>/ and looks for a file named
- * `background` in any common image format (JPG first — real photos are
- * usually JPG/PNG; the bundled SVG scenery is the last fallback). The theme
- * id itself is also accepted as a filename, so a file renamed to
- * `goku.jpg`, `login.jpg` or `banner.jpg` works too.
+ * Resolution order per slot:
  *
- *   public/themes/goku/background.jpg   ← your upload (any of the below)
- *   public/themes/goku/goku.jpg
- *   public/themes/goku/background.png
- *   public/themes/goku/background.webp
- *   public/themes/goku/background.avif
- *   public/themes/goku/background.svg   ← built-in fallback artwork
+ *   1. The uploaded project assets (public/assets/*) — these are the real
+ *      anime wallpapers and take priority.
+ *   2. A per-theme folder at public/themes/<id>/ looking for a file named
+ *      `background` in any common image format (JPG first, SVG last).
+ *   3. The bundled SVG scenery as the final fallback.
+ *
+ * Uploaded assets (1) — served from public/ so the paths are stable in both
+ * development and production builds:
+ *
+ *   /assets/goku.png       → goku theme
+ *   /assets/luffy.png      → luffy theme
+ *   /assets/naruto.png     → naruto theme
+ *   /assets/all_three.png  → trio theme (Luffy + Naruto + Goku combined)
+ *   /assets/background.png → login page background ONLY
+ *   /assets/banner.png     → home hero banner ONLY
+ *
+ * The `rex` theme has no upload — it keeps its built-in REX artwork.
  *
  * Slots:
  *   rex, luffy, naruto, goku, trio  → selectable anime themes (dashboard
@@ -21,12 +28,24 @@
  *   login                           → Login page full-screen background
  *   banner                          → Home hero banner (falls back to the
  *                                     active theme's artwork if absent)
- *
- * Drop a file into the folder, refresh, and every surface picks it up
- * automatically — no React code changes needed.
  */
 
 const EXTENSIONS = ["jpg", "jpeg", "png", "webp", "avif", "svg"];
+
+/**
+ * Uploaded project assets — served from public/ so these URLs work in
+ * development and in the production build. These win over the per-theme
+ * folders and the SVG fallback. (Slots without an entry, e.g. `rex`, keep
+ * their existing artwork.)
+ */
+const UPLOADED_ASSETS = {
+  goku: "/assets/goku.png",
+  luffy: "/assets/luffy.png",
+  naruto: "/assets/naruto.png",
+  trio: "/assets/all_three.png",
+  login: "/assets/background.png",
+  banner: "/assets/banner.png",
+};
 
 const cache = new Map();
 
@@ -35,12 +54,17 @@ function candidateNames(slot) {
   return ["background", slot];
 }
 
-/** Candidate URLs for a slot, in priority order. */
+/** Candidate URLs for a slot, in priority order (uploaded asset first). */
 export function artworkCandidates(slot) {
   const urls = [];
+
+  const uploaded = UPLOADED_ASSETS[slot];
+  if (uploaded) urls.push(uploaded);
+
   for (const name of candidateNames(slot)) {
     for (const extension of EXTENSIONS) {
-      urls.push(`/themes/${slot}/${name}.${extension}`);
+      const url = `/themes/${slot}/${name}.${extension}`;
+      if (url !== uploaded) urls.push(url);
     }
   }
   return urls;

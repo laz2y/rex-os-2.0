@@ -195,17 +195,17 @@ export default function Settings() {
         <h2>
           <Palette size={18} /> Anime Themes
         </h2>          <p>
-            Pick an atmosphere — hover a card to preview its background. To use
-            your own artwork, drop a file named{" "}
-            <code style={{ color: "white" }}>background.jpg</code>,{" "}
-            <code style={{ color: "white" }}>background.png</code> or{" "}
-            <code style={{ color: "white" }}>background.webp</code> into{" "}
-            <code style={{ color: "white" }}>public/themes/&#123;rex|luffy|naruto|goku|trio&#125;/</code>{" "}
-            and refresh — REX OS picks it up automatically. The Login screen
-            reads <code style={{ color: "white" }}>public/themes/login/</code>{" "}
-            and the Home banner reads{" "}
-            <code style={{ color: "white" }}>public/themes/banner/</code>{" "}
-            with the same naming rules.
+            Pick an atmosphere — hover a card to preview its background. The
+            theme wallpapers live in{" "}
+            <code style={{ color: "white" }}>public/assets/</code>{" "}
+            (<code style={{ color: "white" }}>goku.png</code>,{" "}
+            <code style={{ color: "white" }}>luffy.png</code>,{" "}
+            <code style={{ color: "white" }}>naruto.png</code>,{" "}
+            <code style={{ color: "white" }}>all_three.png</code> for The Trio)
+            with <code style={{ color: "white" }}>background.png</code> reserved
+            for the Login screen and{" "}
+            <code style={{ color: "white" }}>banner.png</code> for the Home
+            hero — replace a file and refresh to swap the artwork.
           </p>
 
         <div className="theme-grid">
