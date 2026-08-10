@@ -117,29 +117,34 @@ export default function DockerDetails({
             <X size={22} />
           </button>
 
-          <div className="details-header">
-            <div className="details-icon">
-              <Server size={30} />
+          {/* Scrollable body — flex: 1 + min-height: 0 keeps the action
+              bar below fully visible at any viewport height. */}
+          <div className="details-content">
+            <div className="details-header">
+              <div className="details-icon">
+                <Server size={30} />
+              </div>
+
+              <div>
+                <h2>{container.name}</h2>
+                <p>{container.image}</p>
+              </div>
             </div>
 
-            <div>
-              <h2>{container.name}</h2>
-              <p>{container.image}</p>
+            <div className="details-grid">
+              <div>
+                <span>Status</span>
+                <strong>{container.state}</strong>
+              </div>
+
+              <div>
+                <span>Uptime</span>
+                <strong>{container.status}</strong>
+              </div>
             </div>
           </div>
 
-          <div className="details-grid">
-            <div>
-              <span>Status</span>
-              <strong>{container.state}</strong>
-            </div>
-
-            <div>
-              <span>Uptime</span>
-              <strong>{container.status}</strong>
-            </div>
-          </div>
-
+          {/* Pinned action bar — never clipped, never pushed off-screen */}
           <div className="details-actions">
 
             <button

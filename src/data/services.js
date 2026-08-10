@@ -9,6 +9,7 @@ import {
   Film,
   Search,
   Sailboat,
+  Zap,
 } from "lucide-react";
 
 export const services = [
@@ -109,6 +110,16 @@ export const services = [
     icon: Sailboat,
     color: "#a3e635",
     url: "https://jackett.laz2ynas.cc",
+    category: "downloads",
+  },
+
+  {
+    id: "flaresolverr",
+    name: "FlareSolverr",
+    description: "Challenge Proxy",
+    icon: Zap,
+    color: "#f59e0b",
+    url: "https://flaresolverr.laz2ynas.cc",
     category: "downloads",
   },
 ];

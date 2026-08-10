@@ -88,7 +88,10 @@
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  touch-action: pan-y;
+  /* Native touch/trackpad scrolling: the browser pans this track
+     horizontally while vertical gestures still scroll the page. The JS
+     drag handler only takes over for mouse pointers. */
+  touch-action: auto;
   cursor: grab;
   /* vertical padding so hover lift + shadows are not clipped by the
      scroll container; negative margin keeps the row flush with the panel */
@@ -238,6 +241,12 @@
   color: white;
 
   text-align: center;
+
+  /* Long names (e.g. FlareSolverr) must never overflow the card */
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---- Responsive card counts ---- */
@@ -249,10 +258,16 @@
   }
 }
 
-/* Phones: ~1.6 cards visible so the next app peeks in */
+/* Phones: ~2–3 cards visible depending on width, with a hint of the
+   next app peeking in so swiping is obvious */
 @media (max-width: 640px) {
   .quick-launch {
     padding: 18px;
+  }
+
+  .section-header {
+    flex-wrap: wrap;
+    row-gap: 10px;
   }
 
   .section-header h2 {
@@ -266,7 +281,7 @@
   }
 
   .launch-card {
-    flex: 0 0 calc((100% - 18px) / 1.6);
+    flex: 0 0 calc((100% - 2 * 10px) / 2.2);
     scroll-snap-align: start;
 
     flex-direction: row;

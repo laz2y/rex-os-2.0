@@ -51,23 +51,32 @@ export default function QuickLaunch() {
     el.scrollBy({ left: direction * step, behavior: "smooth" });
   }, []);
 
-  /* ---- pointer drag (mouse + touch) ---- */
+  /* ---- pointer drag (mouse only) ----
+     Touch/trackpad scrolling is handled natively by the browser so phones
+     and tablets get real momentum, rubber-banding and scroll-snap. The JS
+     drag below only takes over for mouse pointers. */
 
   const onPointerDown = (e) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     const el = trackRef.current;
     if (!el) return;
+
+    const isMouse = e.pointerType === "mouse";
     drag.current = {
       active: true,
+      isMouse,
       startX: e.clientX,
       startScroll: el.scrollLeft,
       moved: false,
     };
-    setDragging(true);
-    try {
-      el.setPointerCapture(e.pointerId);
-    } catch {
-      /* capture is a nicety — ignore when unsupported */
+
+    if (isMouse) {
+      setDragging(true);
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+        /* capture is a nicety — ignore when unsupported */
+      }
     }
   };
 
@@ -75,19 +84,34 @@ export default function QuickLaunch() {
     const d = drag.current;
     const el = trackRef.current;
     if (!d.active || !el) return;
+
+    if (!d.isMouse) {
+      // Native scrolling already moves el.scrollLeft; just record whether
+      // the gesture actually scrolled so the trailing click is swallowed.
+      if (Math.abs(el.scrollLeft - d.startScroll) > DRAG_THRESHOLD) d.moved = true;
+      return;
+    }
+
     const dx = e.clientX - d.startX;
     if (Math.abs(dx) > DRAG_THRESHOLD) d.moved = true;
     el.scrollLeft = d.startScroll - dx;
   };
 
   const endDrag = () => {
-    if (!drag.current.active) return;
-    drag.current.active = false;
+    const d = drag.current;
+    const el = trackRef.current;
+    if (!d.active) return;
+    // Touch swipes may not fire pointermove once the browser takes over
+    // native scrolling — check the scroll position directly.
+    if (!d.isMouse && el && Math.abs(el.scrollLeft - d.startScroll) > DRAG_THRESHOLD) {
+      d.moved = true;
+    }
+    d.active = false;
     setDragging(false);
   };
 
-  // Swallow the click that follows a real drag so cards are not opened
-  // when the user was actually swiping.
+  // Swallow the click that follows a real drag/swipe so cards are not
+  // opened when the user was actually scrolling.
   const onClickCapture = (e) => {
     if (drag.current.moved) {
       e.preventDefault();
@@ -123,7 +147,7 @@ export default function QuickLaunch() {
         <h2>Quick Launch</h2>
 
         <div className="launch-controls">
-          <span>{services.length} Services</span>
+          <span className="launch-count">{services.length} Services</span>
 
           <div className="launch-arrows">
             <button
