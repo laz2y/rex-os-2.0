@@ -8,3 +8,4 @@ backend/node_modules
 src/convex/_generated
 # Release packages stay on disk but are not committed
 rexos-2.0-release.tar.gz
+rexos-2.1-release.tar.gz
