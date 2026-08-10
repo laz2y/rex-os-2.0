@@ -6,6 +6,7 @@ backend/.auth-secrets.json
 node_modules
 backend/node_modules
 src/convex/_generated
-# Release packages stay on disk but are not committed
+# Legacy 2.0 release package stays on disk but is not committed.
+# rexos-2.1-release.tar.gz is intentionally tracked so it appears in the
+# GitHub repository root alongside the project (like the 2.0 archive did).
 rexos-2.0-release.tar.gz
-rexos-2.1-release.tar.gz
