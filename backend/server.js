@@ -109,6 +109,24 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// TEMPORARY download route (REX OS 2.1 release handoff). Streams the exact
+// verified release archive from the project root so the user can download it
+// from the preview. Serves ONLY this one file; remove after the download is
+// confirmed.
+const RELEASE_ARCHIVE = path.join(__dirname, "..", "rexos-2.1-release.tar.gz");
+app.get("/api/download/rexos-2.1-release.tar.gz", (req, res) => {
+  if (!fs.existsSync(RELEASE_ARCHIVE)) {
+    return res.status(404).json({ error: "Release archive not found" });
+  }
+  res.setHeader("Content-Type", "application/gzip");
+  res.setHeader(
+    "Content-Disposition",
+    'attachment; filename="rexos-2.1-release.tar.gz"'
+  );
+  res.setHeader("Content-Length", fs.statSync(RELEASE_ARCHIVE).size);
+  fs.createReadStream(RELEASE_ARCHIVE).pipe(res);
+});
+
 app.use("/api/system", systemRoute);
 app.use("/api/docker", dockerRoute);
 app.use("/api/jellyfin", jellyfinRoute);
