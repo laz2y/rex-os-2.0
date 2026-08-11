@@ -27,6 +27,9 @@ try {
       "QBITTORRENT_URL",
       "QBITTORRENT_USERNAME",
       "QBITTORRENT_PASSWORD",
+      "PYLOAD_URL",
+      "PYLOAD_USERNAME",
+      "PYLOAD_PASSWORD",
     ];
     for (const key of GAP_KEYS) {
       if (
@@ -57,6 +60,7 @@ const dockerRoute = require("./routes/docker");
 const jellyfinRoute = require("./routes/jellyfin");
 const nextcloudRoute = require("./routes/nextcloud");
 const immichRoute = require("./routes/immich");
+const pyLoadRoute = require("./routes/pyLoad");
 const authRoute = require("./routes/auth");
 
 const app = express();
@@ -132,6 +136,7 @@ app.use("/api/docker", dockerRoute);
 app.use("/api/jellyfin", jellyfinRoute);
 app.use("/api/nextcloud", nextcloudRoute);
 app.use("/api/immich", immichRoute);
+app.use("/api/pyload", pyLoadRoute);
 app.use("/api/auth", authRoute);
 
 app.listen(process.env.PORT || 4000, () => {

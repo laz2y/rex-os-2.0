@@ -5,11 +5,13 @@ import {
   Cloud,
   HardDrive,
   Home,
+  Link2,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const ITEMS = [
   { to: "/", label: "Home", icon: Home, end: true },
+  { to: "/direct-link", label: "Direct Link", icon: Link2 },
   { to: "/media", label: "Media", icon: Clapperboard },
   { to: "/cloud", label: "Cloud", icon: Cloud },
   { to: "/photos", label: "Photos", icon: Camera },

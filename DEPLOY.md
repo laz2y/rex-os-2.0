@@ -107,6 +107,9 @@ All server-side, all in `backend/.env` (or exported in the process env).
 | `QBITTORRENT_URL` | e.g. `https://qbittorrent.laz2ynas.cc` |
 | `QBITTORRENT_USERNAME` | qBittorrent user |
 | `QBITTORRENT_PASSWORD` | qBittorrent app password |
+| `PYLOAD_URL` | pyLoad web/API base, e.g. `https://pyload.laz2ynas.cc` |
+| `PYLOAD_USERNAME` | pyLoad login user |
+| `PYLOAD_PASSWORD` | pyLoad login password |
 
 Optional override file: `backend/.auth-secrets.json` — fill-gap values
 for the same keys, plus `REX_PASSWORD_HASH` which always overrides.

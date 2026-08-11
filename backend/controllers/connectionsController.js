@@ -1,4 +1,5 @@
 const axios = require("axios");
+const pyLoad = require("../services/pyLoadService");
 
 /**
  * Service probes. Each probe runs entirely server-side using the backend
@@ -82,6 +83,14 @@ const SERVICES = {
       );
       if (String(data).trim() === "Ok.") return "authenticated";
       throw new Error("login rejected");
+    },
+  },
+  pyload: {
+    name: "pyLoad",
+    probe: async () => {
+      if (!pyLoad.isConfigured()) throw new Error("not configured");
+      const version = await pyLoad.probe();
+      return version && version !== "reachable" ? `v${version}` : "reachable";
     },
   },
 };

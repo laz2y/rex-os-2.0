@@ -569,7 +569,7 @@
   /* Bottom navigation */
   .bottom-nav {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(7, 1fr);
     position: fixed;
     left: 0;
     right: 0;
@@ -599,6 +599,13 @@
     text-decoration: none;
 
     transition: color 0.2s ease;
+  }
+
+  .bottom-item span {
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .bottom-item.active {

@@ -95,6 +95,8 @@ function summarize(result) {
     "/api/jellyfin",
     "/api/jellyfin/latest",
     "/api/immich/overview",
+    "/api/pyload",
+    "/api/pyload/status",
     "/api/auth/me",
   ];
 

@@ -8,6 +8,7 @@ import {
   Cloud as CloudIcon,
   Download,
   Film,
+  PackageOpen,
   Palette,
   RefreshCw,
   ShieldCheck,
@@ -41,6 +42,12 @@ const CONNECTIONS = [
     icon: Boxes,
   },
   { id: "qbittorrent", name: "qBittorrent", description: "Downloads", icon: Download },
+  {
+    id: "pyload",
+    name: "pyLoad",
+    description: "Direct link downloads",
+    icon: PackageOpen,
+  },
 ];
 
 const IDLE = { state: "checking", detail: "Checking…", ms: null };
@@ -247,8 +254,9 @@ export default function Settings() {
           <div>
             <h2>Connections</h2>
             <p>
-              Jellyfin, Nextcloud, Immich, Portainer and qBittorrent. Every
-              check runs through the REX API — credentials stay server-side.
+              Jellyfin, Nextcloud, Immich, Portainer, qBittorrent and pyLoad.
+              Every check runs through the REX API — credentials stay
+              server-side.
             </p>
           </div>
 
