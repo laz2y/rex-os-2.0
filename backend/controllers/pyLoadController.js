@@ -11,7 +11,10 @@ const pyLoad = require("../services/pyLoadService");
 
 /** Friendly, credential-free error for the browser + a log line for the API. */
 function fail(res, error, fallback) {
-  const status = error.response ? error.response.status : null;
+  // error.status is set by pyLoadService for credential-free auth failures
+  // (login rejected, wrong URL, missing CSRF), error.response.status for
+  // HTTP errors from pyLoad itself.
+  const status = error.response ? error.response.status : error.status || null;
   const network = !status && (error.code === "ECONNABORTED" || !error.response);
   const message = network
     ? "pyLoad did not respond in time. Check that pyLoad is running."
@@ -100,7 +103,8 @@ exports.addLink = async (req, res) => {
     });
   } catch (error) {
     // A rejected session usually means stale credentials — re-auth next time.
-    if (error.response && error.response.status === 401) {
+    const authStatus = error.response ? error.response.status : error.status;
+    if (authStatus === 401 || authStatus === 403) {
       pyLoad.resetSession();
     }
     fail(res, error, "Failed to add the download in pyLoad.");
@@ -119,7 +123,8 @@ exports.getStatus = async (req, res) => {
     const downloads = await pyLoad.getDownloads();
     res.json({ ok: true, downloads });
   } catch (error) {
-    if (error.response && error.response.status === 401) {
+    const authStatus = error.response ? error.response.status : error.status;
+    if (authStatus === 401 || authStatus === 403) {
       pyLoad.resetSession();
     }
     fail(res, error, "Could not fetch pyLoad status.");

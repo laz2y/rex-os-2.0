@@ -5,11 +5,15 @@ const axios = require("axios");
  * come from backend/.env or backend/.auth-secrets.json (PYLOAD_URL,
  * PYLOAD_USERNAME, PYLOAD_PASSWORD) and never reach the browser.
  *
- * pyLoad's HTTP/JSON API:
- *   POST /api/login                 -> session token (string, or {session} in pyload-ng)
- *   POST /api/addPackage            -> package id (int)
- *   GET  /api/statusDownloads       -> list of running downloads
- * Sessions are passed back as a `session` query parameter.
+ * The pyLoad instance this targets (0.5.x, pyLoad-ng API) removed the old
+ * /api/login session API — legacy calls now get "Obsolete API". The current
+ * surface is:
+ *   - web-UI login: POST /login (CSRF-protected) -> pyload_session_* cookie
+ *   - JSON API under /api/* authenticated by that session cookie
+ *   - state-changing calls additionally require the X-CSRFToken header
+ * REX therefore logs in once through the web UI, caches the session cookie
+ * and CSRF token, and calls the /api/* endpoints directly. On a 401/403 the
+ * session is dropped and re-established before one retry.
  *
  * REX deliberately does NOT set a filename, folder or category — pyLoad
  * resolves the real download name itself, and the existing pyLoad →
@@ -19,7 +23,7 @@ const axios = require("axios");
 const LOGIN_TIMEOUT = 10000;
 const API_TIMEOUT = 15000;
 
-let cachedSession = null;
+let cachedAuth = null; // { cookieName, cookieValue, csrfToken }
 
 function getConfig() {
   return {
@@ -38,39 +42,157 @@ function getBaseUrl() {
   return getConfig().baseUrl || null;
 }
 
-/** Log in to pyLoad and cache the session token (never log credentials). */
+/** Extract the first Set-Cookie name=value pair from axios headers. */
+function extractCookie(setCookie) {
+  const headers = Array.isArray(setCookie)
+    ? setCookie
+    : setCookie
+    ? [setCookie]
+    : [];
+  for (const header of headers) {
+    const pair = String(header).split(";")[0];
+    const eq = pair.indexOf("=");
+    if (eq > 0) {
+      const name = pair.slice(0, eq).trim();
+      const value = pair.slice(eq + 1).trim();
+      if (name && value) return { name, value };
+    }
+  }
+  return null;
+}
+
+/** Pull the CSRF token out of a pyLoad HTML page. */
+function readCsrfToken(html) {
+  const match = String(html).match(/name="csrf-token"\s+content="([^"]+)"/);
+  return match ? match[1] : null;
+}
+
+/** The login page is recognizable by its login form / username field. */
+function isLoginPage(html) {
+  return /id="login"|name="username"/.test(String(html));
+}
+
+/** Credential-free error carrying an HTTP-ish status for the controller. */
+function authError(message, status) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
+
+/**
+ * Log in to pyLoad's web UI and cache the session cookie + CSRF token.
+ * This is the auth path for pyLoad 0.5.x+ ("Obsolete API" on /api/login).
+ */
 async function login() {
   const { baseUrl, username, password } = getConfig();
 
-  const { data } = await axios.post(
-    `${baseUrl}/api/login`,
-    new URLSearchParams({ username, password }).toString(),
+  // 1) GET /login seeds a session cookie and a CSRF token for that session.
+  let seed;
+  try {
+    seed = await axios.get(`${baseUrl}/login`, { timeout: LOGIN_TIMEOUT });
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      throw authError(
+        "pyLoad web login is not reachable (check PYLOAD_URL).",
+        404
+      );
+    }
+    throw error;
+  }
+
+  const cookie = extractCookie(seed.headers["set-cookie"]);
+  const csrf = readCsrfToken(seed.data);
+  if (!csrf) {
+    throw authError(
+      "pyLoad login page did not include a CSRF token (check PYLOAD_URL).",
+      502
+    );
+  }
+
+  const seedCookieHeader = cookie ? `${cookie.name}=${cookie.value}` : "";
+
+  // 2) POST credentials — the redirect response carries the real session
+  //    cookie, so do not follow it (maxRedirects 0, accept <400).
+  const loginRes = await axios.post(
+    `${baseUrl}/login`,
+    new URLSearchParams({
+      do: "login",
+      csrf_token: csrf,
+      username,
+      password,
+    }).toString(),
     {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        ...(seedCookieHeader ? { Cookie: seedCookieHeader } : {}),
+      },
+      maxRedirects: 0,
+      validateStatus: (status) => status < 400,
       timeout: LOGIN_TIMEOUT,
     }
   );
 
-  // pyload-ng returns { session: "..." }, older pyLoad returns a bare string.
-  let session =
-    typeof data === "string" ? data.trim() : data && (data.session || data.token);
-
-  if (!session || session === "None") {
-    throw new Error("pyLoad login returned no session");
+  const session = extractCookie(loginRes.headers["set-cookie"]) || cookie;
+  if (!session) {
+    throw authError("pyLoad login did not return a session cookie.", 502);
   }
 
-  cachedSession = session;
-  return session;
+  // 3) The token above belongs to the pre-login session — fetch an
+  //    authenticated page to get the CSRF token for the new session.
+  const authed = await axios.get(`${baseUrl}/dashboard`, {
+    headers: { Cookie: `${session.name}=${session.value}` },
+    timeout: LOGIN_TIMEOUT,
+  });
+  if (isLoginPage(authed.data)) {
+    throw authError("pyLoad rejected the credentials.", 401);
+  }
+  const authedCsrf = readCsrfToken(authed.data);
+  if (!authedCsrf) {
+    throw authError("pyLoad did not return a CSRF token after login.", 502);
+  }
+
+  cachedAuth = {
+    cookieName: session.name,
+    cookieValue: session.value,
+    csrfToken: authedCsrf,
+  };
+  return cachedAuth;
 }
 
 async function getSession() {
-  if (cachedSession) return cachedSession;
+  if (cachedAuth) return cachedAuth;
   return login();
 }
 
 /** Force a fresh session next call (used after an auth failure). */
 function resetSession() {
-  cachedSession = null;
+  cachedAuth = null;
+}
+
+function authHeaders(auth) {
+  return {
+    Cookie: `${auth.cookieName}=${auth.cookieValue}`,
+    "X-CSRFToken": auth.csrfToken,
+  };
+}
+
+/**
+ * Run fn(auth) once; on an auth failure (401/403) drop the cached session,
+ * re-login and retry once so a stale/expired session self-heals.
+ */
+async function withAuth(fn) {
+  let auth = await getSession();
+  try {
+    return await fn(auth);
+  } catch (error) {
+    const status = error.response ? error.response.status : error.status || null;
+    if (status === 401 || status === 403) {
+      resetSession();
+      auth = await login();
+      return fn(auth);
+    }
+    throw error;
+  }
 }
 
 /**
@@ -79,44 +201,22 @@ function resetSession() {
  * itself, truncated) so the status page can match it back later.
  */
 async function addPackage(url) {
-  const { baseUrl } = getConfig();
-  const session = await getSession();
-  const packageName = url.length > 200 ? url.slice(0, 200) : url;
+  return withAuth(async (auth) => {
+    const { baseUrl } = getConfig();
+    const packageName = url.length > 200 ? url.slice(0, 200) : url;
 
-  const params = { session };
-  const payload = { name: packageName, links: [url] };
-
-  let packageId = null;
-
-  try {
-    // pyload-ng style: JSON body.
-    const { data } = await axios.post(`${baseUrl}/api/addPackage`, payload, {
-      params,
-      timeout: API_TIMEOUT,
-    });
-    packageId = extractPackageId(data);
-  } catch (error) {
-    // Legacy pyLoad 0.5 style: form-encoded keyword arguments. Only attempt
-    // the fallback when the first call produced an HTTP error (not a network
-    // failure), so a dead pyLoad never yields a duplicate add.
-    if (!error.response) throw error;
-
+    // dest defaults to the queue (Destination.QUEUE = 1) server-side.
     const { data } = await axios.post(
-      `${baseUrl}/api/addPackage`,
-      new URLSearchParams({
-        session,
-        name: packageName,
-        links: JSON.stringify([url]),
-      }).toString(),
+      `${baseUrl}/api/add_package`,
+      { name: packageName, links: [url] },
       {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        headers: { ...authHeaders(auth), "Content-Type": "application/json" },
         timeout: API_TIMEOUT,
       }
     );
-    packageId = extractPackageId(data);
-  }
 
-  return { packageId, packageName };
+    return { packageId: extractPackageId(data), packageName };
+  });
 }
 
 function extractPackageId(data) {
@@ -140,23 +240,29 @@ function categorizeStatus(statusMsg, status) {
   const msg = String(statusMsg || "").toLowerCase();
 
   if (/finish/.test(msg)) return "finished";
-  if (/fail|error|offline|not available|invalid|unresolv/.test(msg)) {
+  if (/fail|error|offline|not available|invalid|unresolv|skip/.test(msg)) {
     return "failed";
   }
   if (/paus/.test(msg)) return "paused";
   if (/wait/.test(msg)) return "waiting";
   if (/queue/.test(msg)) return "queued";
   if (/process|extract|decrypt|resolv|analy/.test(msg)) return "processing";
-  if (/download|fetch|connect/.test(msg)) return "downloading";
+  if (/download|fetch|connect|start/.test(msg)) return "downloading";
 
-  // Fallback to the numeric status code when the message is generic.
+  // Fallback to the numeric status code (pyLoad 0.5.x DownloadStatus enum)
+  // when the message is generic:
+  //   0 FINISHED · 12 DOWNLOADING · 7 STARTING · 3 QUEUED · 2 ONLINE ·
+  //   5 WAITING · 13 PROCESSING · 10 DECRYPTING · 8 FAILED · 9 ABORTED ·
+  //   4 SKIPPED · 1 OFFLINE · 6 TEMPOFFLINE · 11 CUSTOM · 14 UNKNOWN
   if (typeof status === "number") {
     if (status === 0) return "finished";
-    if (status === 3 || status === 15) return "downloading";
-    if (status === 2) return "queued";
-    if (status === 4 || status === 1 || status === 10) return "failed";
-    if (status === 6) return "paused";
-    if (status === 9 || status === 14) return "waiting";
+    if (status === 12 || status === 7) return "downloading";
+    if (status === 3 || status === 2) return "queued";
+    if (status === 5) return "waiting";
+    if (status === 13 || status === 10) return "processing";
+    if (status === 8 || status === 9 || status === 4 || status === 1 || status === 6) {
+      return "failed";
+    }
   }
 
   return "active";
@@ -186,8 +292,8 @@ function mapDownload(item) {
   return {
     fid: item.fid ?? null,
     name: item.name || "Unknown file",
-    package: item.package || "",
-    packageId: toNumber(item.packageid) ?? null,
+    package: item.package_name || item.package || "",
+    packageId: toNumber(item.package_id) ?? toNumber(item.packageid) ?? null,
     state,
     status: item.statusmsg || item.status || "active",
     progress: progress != null ? Math.max(0, Math.min(100, progress)) : null,
@@ -199,16 +305,16 @@ function mapDownload(item) {
 
 /** Current downloads (name, status, progress, size, speed, ETA). */
 async function getDownloads() {
-  const { baseUrl } = getConfig();
-  const session = await getSession();
+  return withAuth(async (auth) => {
+    const { baseUrl } = getConfig();
+    const { data } = await axios.get(`${baseUrl}/api/status_downloads`, {
+      headers: authHeaders(auth),
+      timeout: API_TIMEOUT,
+    });
 
-  const { data } = await axios.get(`${baseUrl}/api/statusDownloads`, {
-    params: { session },
-    timeout: API_TIMEOUT,
+    const list = Array.isArray(data) ? data : data && data.downloads;
+    return Array.isArray(list) ? list.map(mapDownload) : [];
   });
-
-  const list = Array.isArray(data) ? data : data && data.downloads;
-  return Array.isArray(list) ? list.map(mapDownload) : [];
 }
 
 /** Lightweight reachability + version probe (used by the page and Settings). */
@@ -217,16 +323,17 @@ async function probe() {
 
   const { baseUrl } = getConfig();
 
-  // statusDownloads is cheap and exercises both auth and the API.
+  // status_downloads is cheap and exercises both auth and the API.
   await getDownloads();
 
   let version = "reachable";
   try {
-    const session = cachedSession || (await login());
-    const { data } = await axios.get(`${baseUrl}/api/getServerVersion`, {
-      params: { session },
-      timeout: API_TIMEOUT,
-    });
+    const { data } = await withAuth((auth) =>
+      axios.get(`${baseUrl}/api/get_server_version`, {
+        headers: authHeaders(auth),
+        timeout: API_TIMEOUT,
+      })
+    );
     if (typeof data === "string" && data.trim()) version = data.trim();
   } catch {
     /* version is optional — reachability already proven */
