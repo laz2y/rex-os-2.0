@@ -30,6 +30,10 @@ try {
       "PYLOAD_URL",
       "PYLOAD_USERNAME",
       "PYLOAD_PASSWORD",
+      "RADARR_URL",
+      "RADARR_API_KEY",
+      "SONARR_URL",
+      "SONARR_API_KEY",
     ];
     for (const key of GAP_KEYS) {
       if (
@@ -62,6 +66,7 @@ const nextcloudRoute = require("./routes/nextcloud");
 const immichRoute = require("./routes/immich");
 const pyLoadRoute = require("./routes/pyLoad");
 const qbittorrentRoute = require("./routes/qBittorrent");
+const pipelineRoute = require("./routes/pipeline");
 const authRoute = require("./routes/auth");
 
 const app = express();
@@ -121,6 +126,7 @@ app.use("/api/nextcloud", nextcloudRoute);
 app.use("/api/immich", immichRoute);
 app.use("/api/pyload", pyLoadRoute);
 app.use("/api/qbittorrent", qbittorrentRoute);
+app.use("/api/pipeline", pipelineRoute);
 app.use("/api/auth", authRoute);
 
 app.listen(process.env.PORT || 4000, () => {

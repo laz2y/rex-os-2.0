@@ -343,6 +343,38 @@ async function getDownloads() {
   });
 }
 
+/**
+ * Queue summary — packages sitting in pyLoad's queue (waiting or active).
+ * Read-only; used by the Pipeline page to show queued downloads. Returns
+ * { packageCount, linkCount, packages }.
+ */
+async function getQueue() {
+  return withAuth(async (auth) => {
+    const { baseUrl } = getConfig();
+    const { data } = await axios.get(`${baseUrl}/api/get_queue`, {
+      headers: authHeaders(auth),
+      timeout: API_TIMEOUT,
+    });
+    const list = Array.isArray(data) ? data : data && data.packages ? data.packages : [];
+    return {
+      packageCount: list.length,
+      linkCount: list.reduce((sum, pkg) => {
+        const n =
+          typeof pkg.links === "number"
+            ? pkg.links
+            : Array.isArray(pkg.links)
+            ? pkg.links.length
+            : 0;
+        return sum + n;
+      }, 0),
+      packages: list.map((pkg) => ({
+        id: pkg.pid ?? null,
+        name: pkg.name || "Unknown package",
+      })),
+    };
+  });
+}
+
 /** Lightweight reachability + version probe (used by the page and Settings). */
 async function probe() {
   if (!isConfigured()) throw new Error("not configured");
@@ -377,5 +409,6 @@ module.exports = {
   addPackage,
   deletePackages,
   getDownloads,
+  getQueue,
   probe,
 };

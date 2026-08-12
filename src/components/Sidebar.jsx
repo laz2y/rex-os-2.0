@@ -10,6 +10,7 @@ import {
   Link2,
   LogOut,
   Settings,
+  Workflow,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 
@@ -21,6 +22,7 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: Home, end: true },
   { to: "/direct-link", label: "Direct Link Add", icon: Link2 },
   { to: "/downloads", label: "Downloads", icon: Download },
+  { to: "/pipeline", label: "Pipeline", icon: Workflow },
   { to: "/media", label: "Media", icon: Clapperboard },
   { to: "/cloud", label: "Cloud", icon: Cloud },
   { to: "/photos", label: "Photos", icon: Camera },
