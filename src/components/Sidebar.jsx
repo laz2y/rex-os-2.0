@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Clapperboard,
   Cloud,
+  Download,
   HardDrive,
   Home,
   Link2,
@@ -19,6 +20,7 @@ import { config } from "../data/config";
 const NAV = [
   { to: "/", label: "Dashboard", icon: Home, end: true },
   { to: "/direct-link", label: "Direct Link Add", icon: Link2 },
+  { to: "/downloads", label: "Downloads", icon: Download },
   { to: "/media", label: "Media", icon: Clapperboard },
   { to: "/cloud", label: "Cloud", icon: Cloud },
   { to: "/photos", label: "Photos", icon: Camera },

@@ -14,6 +14,7 @@ import BottomNav from "./components/BottomNav";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import DirectLink from "./pages/DirectLink";
+import Downloads from "./pages/Downloads";
 import Media from "./pages/Media";
 import Cloud from "./pages/Cloud";
 import Photos from "./pages/Photos";
@@ -34,6 +35,7 @@ function PageTransition() {
       <Routes location={location}>
         <Route path="/" element={<Home />} />
         <Route path="/direct-link" element={<DirectLink />} />
+        <Route path="/downloads" element={<Downloads />} />
         <Route path="/media" element={<Media />} />
         <Route path="/cloud" element={<Cloud />} />
         <Route path="/photos" element={<Photos />} />

@@ -3,6 +3,7 @@ import {
   Camera,
   Clapperboard,
   Cloud,
+  Download,
   HardDrive,
   Home,
   Link2,
@@ -12,6 +13,7 @@ import { NavLink } from "react-router-dom";
 const ITEMS = [
   { to: "/", label: "Home", icon: Home, end: true },
   { to: "/direct-link", label: "Direct Link", icon: Link2 },
+  { to: "/downloads", label: "Downloads", icon: Download },
   { to: "/media", label: "Media", icon: Clapperboard },
   { to: "/cloud", label: "Cloud", icon: Cloud },
   { to: "/photos", label: "Photos", icon: Camera },

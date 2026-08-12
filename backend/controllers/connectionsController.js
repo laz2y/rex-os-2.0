@@ -1,5 +1,6 @@
 const axios = require("axios");
 const pyLoad = require("../services/pyLoadService");
+const qbittorrent = require("../services/qBittorrentService");
 
 /**
  * Service probes. Each probe runs entirely server-side using the backend
@@ -68,21 +69,9 @@ const SERVICES = {
   qbittorrent: {
     name: "qBittorrent",
     probe: async () => {
-      if (!process.env.QBITTORRENT_URL) throw new Error("not configured");
-      const params = new URLSearchParams({
-        username: process.env.QBITTORRENT_USERNAME || "",
-        password: process.env.QBITTORRENT_PASSWORD || "",
-      });
-      const { data } = await axios.post(
-        `${process.env.QBITTORRENT_URL}/api/v2/auth/login`,
-        params.toString(),
-        {
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          timeout: 8000,
-        }
-      );
-      if (String(data).trim() === "Ok.") return "authenticated";
-      throw new Error("login rejected");
+      if (!qbittorrent.isConfigured()) throw new Error("not configured");
+      const version = await qbittorrent.probe();
+      return version && version !== "reachable" ? version : "reachable";
     },
   },
   pyload: {
