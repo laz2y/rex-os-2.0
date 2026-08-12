@@ -129,6 +129,28 @@ app.use("/api/qbittorrent", qbittorrentRoute);
 app.use("/api/pipeline", pipelineRoute);
 app.use("/api/auth", authRoute);
 
+// ⚠️ TEMPORARY — dev-release download route. REMOVE AFTER DOWNLOAD.
+// Serves ONLY the verified rexos-2.2-release.tar.gz archive so the
+// developer can pull it out of the workspace for manual upload. No
+// directory listing, no other files, clean 404 when missing. Do NOT
+// ship this route in a release — delete it once the download is done.
+const REX22_RELEASE_ARCHIVE = path.join(
+  __dirname,
+  "..",
+  "rexos-2.2-release.tar.gz"
+);
+app.get("/api/download/rexos-2.2-release.tar.gz", (req, res) => {
+  if (!fs.existsSync(REX22_RELEASE_ARCHIVE)) {
+    return res.status(404).json({ error: "Release archive not found" });
+  }
+  res.setHeader("Content-Type", "application/gzip");
+  res.setHeader(
+    "Content-Disposition",
+    'attachment; filename="rexos-2.2-release.tar.gz"'
+  );
+  res.sendFile(REX22_RELEASE_ARCHIVE);
+});
+
 app.listen(process.env.PORT || 4000, () => {
   console.log(
     `🚀 REX API running on port ${process.env.PORT || 4000}`
