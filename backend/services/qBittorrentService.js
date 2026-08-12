@@ -22,6 +22,11 @@ const API_TIMEOUT = 15000;
 
 let cachedSid = null;
 
+// qBittorrent 5.0+ renamed the control endpoints (pause→stop, resume→start)
+// and the paused state names (pausedUP→stoppedUP). The API major version is
+// cached from /api/v2/app/version; a 404 fallback covers any mismatch.
+let cachedMajor = null;
+
 function getConfig() {
   return {
     baseUrl: (process.env.QBITTORRENT_URL || "").trim().replace(/\/+$/, ""),
@@ -163,6 +168,8 @@ function categorizeState(state) {
       return "seeding";
     case "pausedDL":
     case "pausedUP":
+    case "stoppedDL":
+    case "stoppedUP":
       return "paused";
     case "queuedDL":
     case "queuedUP":
@@ -245,7 +252,7 @@ async function getTransfer() {
   });
 }
 
-/** qBittorrent version string (e.g. "v4.6.5"). */
+/** qBittorrent version string (e.g. "v5.1.4") — also caches the API major. */
 async function getVersion() {
   return withAuth(async (sid) => {
     const { baseUrl } = getConfig();
@@ -253,8 +260,19 @@ async function getVersion() {
       headers: authHeaders(sid),
       timeout: API_TIMEOUT,
     });
-    return String(data || "").trim() || "reachable";
+    const raw = String(data || "").trim() || "reachable";
+    const parsed = Number.parseInt(String(raw).replace(/^v/i, ""), 10);
+    if (Number.isInteger(parsed)) cachedMajor = parsed;
+    return raw;
   });
+}
+
+/** Control endpoint names for the detected API version. */
+function controlEndpoints() {
+  const v5 = cachedMajor != null && cachedMajor >= 5;
+  return v5
+    ? { pause: "stop", resume: "start" }
+    : { pause: "pause", resume: "resume" };
 }
 
 /**
@@ -301,27 +319,43 @@ function toHashList(hashes) {
 async function postControl(endpoint, params) {
   return withAuth(async (sid) => {
     const { baseUrl } = getConfig();
-    await axios.post(
-      `${baseUrl}/api/v2/torrents/${endpoint}`,
-      new URLSearchParams(params).toString(),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          ...authHeaders(sid),
-        },
-        timeout: API_TIMEOUT,
+    const doPost = (name) =>
+      axios.post(
+        `${baseUrl}/api/v2/torrents/${name}`,
+        new URLSearchParams(params).toString(),
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            ...authHeaders(sid),
+          },
+          timeout: API_TIMEOUT,
+        }
+      );
+
+    try {
+      await doPost(endpoint);
+    } catch (error) {
+      // Endpoint renamed between v4 and v5 (pause↔stop, resume↔start) —
+      // retry the alternate name once before giving up.
+      const alt = { pause: "stop", stop: "pause", resume: "start", start: "resume" }[endpoint];
+      if (alt && error.response && error.response.status === 404) {
+        await doPost(alt);
+      } else {
+        throw error;
       }
-    );
+    }
     return { ok: true };
   });
 }
 
 async function pauseTorrents(hashes) {
-  return postControl("pause", { hashes: toHashList(hashes) });
+  const { pause } = controlEndpoints();
+  return postControl(pause, { hashes: toHashList(hashes) });
 }
 
 async function resumeTorrents(hashes) {
-  return postControl("resume", { hashes: toHashList(hashes) });
+  const { resume } = controlEndpoints();
+  return postControl(resume, { hashes: toHashList(hashes) });
 }
 
 /** Remove torrents; deleteFiles=true also removes the downloaded data. */
