@@ -235,6 +235,32 @@ function extractPackageId(data) {
   return null;
 }
 
+/**
+ * Delete packages by id (removes them from pyLoad's queue/collector).
+ * Used for cleaning up test/duplicate downloads — never touches files on
+ * disk (delete_files defaults to false server-side).
+ */
+async function deletePackages(packageIds) {
+  return withAuth(async (auth) => {
+    const { baseUrl } = getConfig();
+    const pids = (Array.isArray(packageIds) ? packageIds : [packageIds])
+      .map((id) => Number.parseInt(String(id), 10))
+      .filter((id) => Number.isInteger(id) && id > 0);
+    if (pids.length === 0) throw new Error("No valid package ids to delete.");
+
+    const { data } = await axios.post(
+      `${baseUrl}/api/delete_packages`,
+      { package_ids: pids },
+      {
+        headers: { ...authHeaders(auth), "Content-Type": "application/json" },
+        timeout: API_TIMEOUT,
+      }
+    );
+
+    return data;
+  });
+}
+
 /** Map a pyLoad statusmsg string to a compact state for the UI. */
 function categorizeStatus(statusMsg, status) {
   const msg = String(statusMsg || "").toLowerCase();
@@ -349,6 +375,7 @@ module.exports = {
   getSession,
   resetSession,
   addPackage,
+  deletePackages,
   getDownloads,
   probe,
 };
