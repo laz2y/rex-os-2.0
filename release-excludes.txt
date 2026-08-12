@@ -1,7 +1,10 @@
-# REX OS 2.0 release excludes — never ship credentials or dev artifacts.
+# REX OS 2.2 release excludes — never ship dev artifacts.
+# NOTE: backend/.auth-secrets.json is intentionally NOT excluded: the 2.2
+# DEVELOPMENT release ships it (see DEPLOY.md) so the archive can be deployed
+# and tested immediately with the existing test/development credentials. It is
+# replaced with real credentials before the final production deployment.
 backend/node_modules
 backend/.env
-backend/.auth-secrets.json
 backend/.env.local
 backend/.env.example
 *.log
@@ -13,3 +16,7 @@ public/assets/rexos-2.1-release.tar.gz
 dist/assets/rexos-2.1-release.tar.gz
 public/rexos-2.1-release.tar.gz
 dist/rexos-2.1-release.tar.gz
+public/assets/rexos-2.2-release.tar.gz
+dist/assets/rexos-2.2-release.tar.gz
+public/rexos-2.2-release.tar.gz
+dist/rexos-2.2-release.tar.gz

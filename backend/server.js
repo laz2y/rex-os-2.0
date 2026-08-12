@@ -106,7 +106,7 @@ if (fs.existsSync(distDir)) {
 app.get("/", (req, res) => {
   res.json({
     app: "REX API",
-    version: "2.1.0",
+    version: "2.2.0",
     status: "online",
   });
 });
@@ -114,7 +114,7 @@ app.get("/", (req, res) => {
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
-    version: "2.1.0",
+    version: "2.2.0",
     uptime: process.uptime(),
   });
 });

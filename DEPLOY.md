@@ -62,7 +62,7 @@ PORT=4000 node server.js
 That starts one process on **port 4000** that serves BOTH:
 - the REX OS UI (`dist/` — served statically with SPA fallback), and
 - the `/api` backend (health, auth, system, docker, jellyfin,
-  nextcloud, immich, pyLoad).
+  nextcloud, immich, pyLoad, qBittorrent, media pipeline).
 
 Recommended: run it under a process manager or systemd so it survives
 reboots. Example systemd unit:
@@ -112,6 +112,10 @@ All server-side, all in `backend/.env` (or exported in the process env).
 | `PYLOAD_URL` | pyLoad web/API base, e.g. `https://pyload.laz2ynas.cc` |
 | `PYLOAD_USERNAME` | pyLoad login user |
 | `PYLOAD_PASSWORD` | pyLoad login password |
+| `RADARR_URL` | Radarr base, e.g. `https://radarr.laz2ynas.cc` |
+| `RADARR_API_KEY` | Radarr API key |
+| `SONARR_URL` | Sonarr base, e.g. `https://sonarr.laz2ynas.cc` |
+| `SONARR_API_KEY` | Sonarr API key |
 
 Optional override file: `backend/.auth-secrets.json` — fill-gap values
 for the same keys, plus `REX_PASSWORD_HASH` which always overrides.
