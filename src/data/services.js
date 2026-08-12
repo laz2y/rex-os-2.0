@@ -59,7 +59,7 @@ export const services = [
     description: "Downloads",
     icon: Download,
     color: "#2563eb",
-    url: "https://qbittorrent.laz2ynas.cc",
+    url: "https://qb.laz2ynas.cc",
     category: "downloads",
   },
 

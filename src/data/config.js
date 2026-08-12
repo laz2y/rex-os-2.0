@@ -4,7 +4,7 @@
  */
 export const config = {
   appName: "REX OS",
-  version: "2.0",
+  version: "2.1",
   userName: "Ak", // shown in the greeting
   hostLabel: "rexos-node", // shown in the sidebar status
   repo: "https://github.com/laz2y/rex-os",
