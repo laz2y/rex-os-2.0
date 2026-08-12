@@ -1,4 +1,4 @@
-/* REX OS 2.1 service worker
+/* REX OS 2.2 service worker
  * Conservative caching:
  *  - navigations: network first, fall back to cached shell when offline
  *  - same-origin static assets: stale-while-revalidate
