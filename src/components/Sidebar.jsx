@@ -14,10 +14,8 @@ import {
   Link2,
   LogOut,
   PackageCheck,
-  Search,
   Server,
   Settings,
-  SquareTerminal,
   Stethoscope,
   Workflow,
 } from "lucide-react";
@@ -30,7 +28,10 @@ import { config } from "../data/config";
 const NAV = [
   {
     caption: "Dashboard",
-    items: [{ to: "/", label: "Dashboard", icon: Home, end: true }],
+    items: [
+      { to: "/", label: "Dashboard", icon: Home, end: true },
+      { to: "/direct-link", label: "Direct Link", icon: Link2 },
+    ],
   },
   {
     caption: "Control",
@@ -47,7 +48,6 @@ const NAV = [
       { to: "/system", label: "System", icon: Server },
       { to: "/docker", label: "Docker", icon: Boxes },
       { to: "/storage", label: "Storage", icon: HardDrive },
-      { to: "/terminal", label: "Terminal", icon: SquareTerminal },
     ],
   },
   {
@@ -56,14 +56,7 @@ const NAV = [
       { to: "/media", label: "Media Center", icon: Clapperboard },
       { to: "/downloads", label: "Downloads", icon: Download },
       { to: "/photos", label: "Photos", icon: Camera },
-      { to: "/search", label: "Search", icon: Search },
-    ],
-  },
-  {
-    caption: "Cloud",
-    items: [
       { to: "/cloud", label: "Cloud", icon: Cloud },
-      { to: "/direct-link", label: "Direct Link", icon: Link2 },
     ],
   },
   {

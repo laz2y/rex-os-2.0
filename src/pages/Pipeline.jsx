@@ -27,7 +27,11 @@ import {
   XCircle,
 } from "lucide-react";
 
-import { getPipeline, restartPipelineService } from "../services/pipelineService";
+import {
+  getPipeline,
+  restartPipelineService,
+  restartPipelineGroup,
+} from "../services/pipelineService";
 import { services } from "../data/services";
 import { success as toastSuccess, error as toastError, warning as toastWarning } from "../services/toastService";
 
@@ -239,6 +243,7 @@ export default function Pipeline() {
   const [error, setError] = useState(null);
   const [reload, setReload] = useState(0);
   const [restarting, setRestarting] = useState(null);
+  const [restartingAll, setRestartingAll] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -356,6 +361,44 @@ export default function Pipeline() {
     setReload((value) => value + 1);
   }
 
+  /**
+   * Controlled full-pipeline restart with confirmation. Uses the existing
+   * group-restart endpoint: services restart one at a time and each is
+   * verified healthy before the next starts — never a blind restart.
+   */
+  async function handleRestartPipeline() {
+    if (
+      !window.confirm(
+        "Restart the entire pipeline (pyLoad → qBittorrent → Radarr → Sonarr → Jellyfin)?\n\nEach service restarts one at a time and is verified healthy before the next starts."
+      )
+    ) {
+      return;
+    }
+
+    setRestartingAll(true);
+    try {
+      const result = await restartPipelineGroup("all");
+      const failed = (result.results || []).filter((item) => !item.ok);
+      if (failed.length === 0) {
+        toastSuccess("Pipeline restarted and verified healthy.");
+      } else {
+        const names = failed.map((item) => item.id).join(", ");
+        toastWarning(
+          failed.length === 1
+            ? `Pipeline restarted, but ${names} did not come back healthy.`
+            : `Pipeline restarted, but some services did not come back healthy: ${names}.`
+        );
+      }
+      refresh();
+    } catch (err) {
+      toastError(
+        err?.response?.data?.error || "Pipeline restart failed."
+      );
+    } finally {
+      setRestartingAll(false);
+    }
+  }
+
   /** Controlled restart with confirmation — backend verifies health after. */
   async function handleRestart(serviceId) {
     const name = cards.find((card) => card.id === serviceId)?.name || serviceId;
@@ -420,6 +463,19 @@ export default function Pipeline() {
             <span>Operation</span>
             <strong title={pipe.operation || ""}>{pipe.operation || "—"}</strong>
           </div>
+        </div>
+
+        <div className="pipe-control-actions">
+          <button
+            type="button"
+            className="pipe-restart-pipeline"
+            onClick={handleRestartPipeline}
+            disabled={restartingAll}
+            title="Restart the whole pipeline — each service is restarted and verified one at a time"
+          >
+            <RotateCcw size={15} className={restartingAll ? "spin" : ""} />
+            {restartingAll ? "Restarting…" : "Restart Pipeline"}
+          </button>
         </div>
       </section>
 

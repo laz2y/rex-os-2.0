@@ -26,7 +26,6 @@ import Activity from "./pages/Activity";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import Storage from "./pages/Storage";
-import Terminal from "./pages/Terminal";
 import Search from "./pages/Search";
 import Updates from "./pages/Updates";
 import Backups from "./pages/Backups";
@@ -53,7 +52,6 @@ function PageTransition() {
         <Route path="/docker" element={<Docker />} />
         <Route path="/system" element={<System />} />
         <Route path="/storage" element={<Storage />} />
-        <Route path="/terminal" element={<Terminal />} />
         <Route path="/diagnostics" element={<Diagnostics />} />
         <Route path="/activity" element={<Activity />} />
         <Route path="/notifications" element={<Notifications />} />

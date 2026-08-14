@@ -10,8 +10,8 @@ const TOKEN_COOKIE = "rexos_token";
  * the JWT server-side on every protected request — same validation used by
  * GET /api/auth/me.
  *
- * Applied to: /api/terminal/* (command execution), /api/storage,
- * /api/system/metrics and /api/docker/{stats,inspect}/:id.
+ * Applied to: /api/storage, /api/system/metrics and
+ * /api/docker/{stats,inspect}/:id.
  */
 
 /** True when the request carries a valid REX OS session cookie. */
