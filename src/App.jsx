@@ -21,6 +21,9 @@ import Cloud from "./pages/Cloud";
 import Photos from "./pages/Photos";
 import Docker from "./pages/Docker";
 import System from "./pages/System";
+import Diagnostics from "./pages/Diagnostics";
+import Activity from "./pages/Activity";
+import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 
 /** Scrolls to the top and replays the page transition on route change. */
@@ -43,6 +46,9 @@ function PageTransition() {
         <Route path="/photos" element={<Photos />} />
         <Route path="/docker" element={<Docker />} />
         <Route path="/system" element={<System />} />
+        <Route path="/diagnostics" element={<Diagnostics />} />
+        <Route path="/activity" element={<Activity />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Home />} />
       </Routes>

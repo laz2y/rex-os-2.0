@@ -1,4 +1,5 @@
 const qbittorrent = require("../services/qBittorrentService");
+const activity = require("../services/activityService");
 
 /**
  * qBittorrent Downloads — REX → qBittorrent Web API v2.
@@ -120,8 +121,24 @@ exports.pauseTorrents = async (req, res) => {
 
   try {
     await qbittorrent.pauseTorrents(hashes);
+    activity.record({
+      type: "downloads",
+      service: "qbittorrent",
+      action: "pause",
+      result: "success",
+      message: `Paused ${hashes.length} torrent(s)`,
+      severity: "info",
+    });
     res.json({ ok: true, paused: hashes.length });
   } catch (error) {
+    activity.record({
+      type: "downloads",
+      service: "qbittorrent",
+      action: "pause",
+      result: "error",
+      message: `Failed to pause ${hashes.length} torrent(s)`,
+      severity: "warning",
+    });
     fail(res, error, "Failed to pause the torrent.");
   }
 };
@@ -133,8 +150,24 @@ exports.resumeTorrents = async (req, res) => {
 
   try {
     await qbittorrent.resumeTorrents(hashes);
+    activity.record({
+      type: "downloads",
+      service: "qbittorrent",
+      action: "resume",
+      result: "success",
+      message: `Resumed ${hashes.length} torrent(s)`,
+      severity: "info",
+    });
     res.json({ ok: true, resumed: hashes.length });
   } catch (error) {
+    activity.record({
+      type: "downloads",
+      service: "qbittorrent",
+      action: "resume",
+      result: "error",
+      message: `Failed to resume ${hashes.length} torrent(s)`,
+      severity: "warning",
+    });
     fail(res, error, "Failed to resume the torrent.");
   }
 };
@@ -148,8 +181,24 @@ exports.removeTorrents = async (req, res) => {
 
   try {
     await qbittorrent.deleteTorrents(hashes, deleteFiles);
+    activity.record({
+      type: "downloads",
+      service: "qbittorrent",
+      action: deleteFiles ? "remove_with_files" : "remove",
+      result: "success",
+      message: `Removed ${hashes.length} torrent(s)${deleteFiles ? " and files" : ""}`,
+      severity: "warning",
+    });
     res.json({ ok: true, removed: hashes.length, deleteFiles });
   } catch (error) {
+    activity.record({
+      type: "downloads",
+      service: "qbittorrent",
+      action: "remove",
+      result: "error",
+      message: `Failed to remove ${hashes.length} torrent(s)`,
+      severity: "warning",
+    });
     fail(res, error, "Failed to remove the torrent.");
   }
 };

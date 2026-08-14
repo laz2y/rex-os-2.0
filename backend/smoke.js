@@ -59,7 +59,13 @@ function summarize(result) {
         Object.entries(b.services)
           .map(([id, s]) => `${id}:${s.status}${s.detail ? `(${s.detail})` : ""}`)
           .join(", ") +
-        " }";    } else {
+        " }";
+    } else if (b.summary) {
+      info = `summary=${JSON.stringify(b.summary)}`;
+    } else if (b.pipeline) {
+      info = `state=${b.pipeline.state} health=${b.pipeline.health} lastSuccess=${b.pipeline.lastSuccess} lastFailure=${b.pipeline.lastFailure} services=${Object.keys(b.services || {}).length}`;
+    } else if (b.unread != null) {
+      info = `total=${b.total} unread=${b.unread}`;    } else {
       if (b.online != null) info += ` online=${b.online}`;
       if (b.versionString) info += ` version=${b.versionString}`;
       if (b.version && b.version.startsWith("v")) info += ` version=${b.version}`;
@@ -97,6 +103,11 @@ function summarize(result) {
     "/api/immich/overview",
     "/api/pyload",
     "/api/pyload/status",
+    "/api/pipeline",
+    "/api/pipeline/recovery",
+    "/api/activity",
+    "/api/notifications",
+    "/api/diagnostics",
     "/api/auth/me",
   ];
 

@@ -68,6 +68,10 @@ const pyLoadRoute = require("./routes/pyLoad");
 const qbittorrentRoute = require("./routes/qBittorrent");
 const pipelineRoute = require("./routes/pipeline");
 const authRoute = require("./routes/auth");
+const activityRoute = require("./routes/activity");
+const notificationsRoute = require("./routes/notifications");
+const diagnosticsRoute = require("./routes/diagnostics");
+const recovery = require("./services/recoveryService");
 
 const app = express();
 
@@ -128,6 +132,9 @@ app.use("/api/pyload", pyLoadRoute);
 app.use("/api/qbittorrent", qbittorrentRoute);
 app.use("/api/pipeline", pipelineRoute);
 app.use("/api/auth", authRoute);
+app.use("/api/activity", activityRoute);
+app.use("/api/notifications", notificationsRoute);
+app.use("/api/diagnostics", diagnosticsRoute);
 
 // ⚠️ TEMPORARY — dev-release download route. REMOVE AFTER DOWNLOAD.
 // Serves ONLY the verified rexos-2.2-release.tar.gz archive so the
@@ -150,6 +157,13 @@ app.get("/api/download/rexos-2.2-release.tar.gz", (req, res) => {
   );
   res.sendFile(REX22_RELEASE_ARCHIVE);
 });
+
+// Start the auto-recovery monitor (probes + controlled restarts + alerts).
+// Guarded so `node smoke.js` / test harnesses can require this module
+// without spawning background timers.
+if (process.env.REX_DISABLE_RECOVERY !== "true") {
+  recovery.start();
+}
 
 app.listen(process.env.PORT || 4000, () => {
   console.log(

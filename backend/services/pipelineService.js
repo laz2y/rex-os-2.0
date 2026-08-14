@@ -3,6 +3,8 @@ const qbittorrent = require("./qBittorrentService");
 const radarr = require("./radarrService");
 const sonarr = require("./sonarrService");
 const jellyfin = require("./jellyfinService");
+const stateStore = require("./stateStore");
+const activity = require("./activityService");
 
 /**
  * Pipeline aggregation — a single GET /api/pipeline payload covering the
@@ -348,6 +350,113 @@ function mergeActivity(sections) {
     .slice(0, 20);
 }
 
+// In-memory operation/recovery flags (set by the restart + auto-recovery
+// flows; not persisted — they describe the current moment, not history).
+let recovering = false;
+let currentOperation = null;
+
+/** Mark the pipeline as being auto-recovered right now. */
+function setRecovering(value) {
+  recovering = Boolean(value);
+}
+
+/** Describe the operation currently running on the pipeline (e.g. "restart:sonarr"). */
+function setOperation(value) {
+  currentOperation = value || null;
+}
+
+/**
+ * Derive the aggregate pipeline state from the real service sections:
+ *   IDLE / RUNNING / SUCCESS / FAILED / DEGRADED / RECOVERING
+ */
+function computePipelineState(services) {
+  const sections = [
+    services.pyload,
+    services.qbittorrent,
+    services.radarr,
+    services.sonarr,
+    services.jellyfin,
+  ];
+
+  const statuses = sections.map((section) => section && section.status).filter(Boolean);
+  const connected = statuses.filter((status) => status === "connected").length;
+  const configured = statuses.filter((status) => status !== "not_configured").length;
+  const failed = statuses.filter((status) =>
+    ["offline", "error", "auth_failed"].includes(status)
+  ).length;
+
+  let state;
+  if (configured === 0) {
+    state = "IDLE";
+  } else if (failed === configured) {
+    state = "FAILED";
+  } else if (failed > 0) {
+    state = "DEGRADED";
+  } else {
+    const busy =
+      (services.pyload?.activeDownloads ?? 0) > 0 ||
+      (services.qbittorrent?.activeCount ?? 0) > 0 ||
+      (services.radarr?.importingCount ?? 0) > 0 ||
+      (services.sonarr?.importingCount ?? 0) > 0;
+    state = busy ? "RUNNING" : "IDLE";
+  }
+
+  if (recovering && (state === "DEGRADED" || state === "FAILED")) {
+    state = "RECOVERING";
+  }
+
+  return state;
+}
+
+/**
+ * Track pipeline state transitions in the persisted state file and record
+ * activity when the state actually changes (never on every poll).
+ */
+function trackState(state, now) {
+  const prior = stateStore.readJson("pipeline-state", {});
+  const changed = prior.state !== state;
+  const next = { ...prior };
+
+  if (state === "IDLE" || state === "RUNNING" || state === "SUCCESS") {
+    next.lastSuccess = now;
+  }
+  if (state === "FAILED") {
+    next.lastFailure = now;
+  }
+  next.state = state;
+  next.updatedAt = now;
+
+  if (changed) {
+    stateStore.writeJson("pipeline-state", next);
+
+    if (state === "FAILED" || state === "DEGRADED") {
+      activity.record({
+        type: "pipeline",
+        service: "pipeline",
+        action: "pipeline_state",
+        result: "warning",
+        message: `Pipeline is ${state}`,
+        severity: state === "FAILED" ? "error" : "warning",
+      });
+    } else if (["FAILED", "DEGRADED", "RECOVERING"].includes(prior.state)) {
+      activity.record({
+        type: "pipeline",
+        service: "pipeline",
+        action: "pipeline_recovered",
+        result: "success",
+        message: `Pipeline recovered — state ${state}`,
+        severity: "success",
+      });
+    }
+  }
+
+  return {
+    lastSuccess: next.lastSuccess || null,
+    lastFailure: next.lastFailure || null,
+    changed,
+  };
+}
+
 /** GET /api/pipeline — full pipeline payload. Never throws. */
 async function getPipeline() {
   const started = Date.now();
@@ -361,16 +470,37 @@ async function getPipeline() {
   ]);
 
   const services = { pyload, qbittorrent: qb, radarr: rd, sonarr: sn, jellyfin: jf };
+  const now = new Date().toISOString();
+
+  const state = computePipelineState(services);
+  const tracking = trackState(state, now);
 
   return {
     ok: true,
-    generatedAt: new Date().toISOString(),
+    generatedAt: now,
     generatedMs: Date.now() - started,
     services,
     activity: mergeActivity(services),
+    pipeline: {
+      state,
+      health:
+        state === "IDLE" || state === "RUNNING" || state === "SUCCESS"
+          ? "healthy"
+          : state === "DEGRADED" || state === "RECOVERING"
+          ? "degraded"
+          : "failed",
+      lastSuccess: tracking.lastSuccess,
+      lastFailure: tracking.lastFailure,
+      executionMs: Date.now() - started,
+      operation: currentOperation,
+      recovering,
+    },
   };
 }
 
 module.exports = {
   getPipeline,
+  computePipelineState,
+  setRecovering,
+  setOperation,
 };

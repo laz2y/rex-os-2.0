@@ -19,6 +19,7 @@ import {
   PackageOpen,
   Pause,
   RefreshCw,
+  RotateCcw,
   Search,
   Trash2,
   Tv,
@@ -26,8 +27,9 @@ import {
   XCircle,
 } from "lucide-react";
 
-import { getPipeline } from "../services/pipelineService";
+import { getPipeline, restartPipelineService } from "../services/pipelineService";
 import { services } from "../data/services";
+import { success as toastSuccess, error as toastError, warning as toastWarning } from "../services/toastService";
 
 const POLL_MS = 8000;
 
@@ -120,7 +122,7 @@ function Stage({ name, sub, icon: Icon, cls, label, optional }) {
   );
 }
 
-function ServiceCard({ card }) {
+function ServiceCard({ card, restarting, onRestart }) {
   const connected = card.status === "connected";
 
   return (
@@ -194,6 +196,19 @@ function ServiceCard({ card }) {
           <span>{card.error}</span>
         </div>
       )}
+
+      {onRestart && (
+        <button
+          type="button"
+          className={`pipe-restart ${restarting ? "busy" : ""}`}
+          onClick={() => onRestart(card.id)}
+          disabled={restarting}
+          title={`Restart ${card.name} and verify health`}
+        >
+          <RotateCcw size={14} className={restarting ? "spin" : ""} />
+          {restarting ? "Restarting…" : "Restart"}
+        </button>
+      )}
     </article>
   );
 }
@@ -209,11 +224,21 @@ function CardSkeleton() {
   );
 }
 
+const PIPE_STATE_META = {
+  IDLE: { label: "Idle", cls: "idle" },
+  RUNNING: { label: "Running", cls: "running" },
+  SUCCESS: { label: "Success", cls: "success" },
+  FAILED: { label: "Failed", cls: "failed" },
+  DEGRADED: { label: "Degraded", cls: "degraded" },
+  RECOVERING: { label: "Recovering", cls: "recovering" },
+};
+
 export default function Pipeline() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reload, setReload] = useState(0);
+  const [restarting, setRestarting] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -331,12 +356,72 @@ export default function Pipeline() {
     setReload((value) => value + 1);
   }
 
+  /** Controlled restart with confirmation — backend verifies health after. */
+  async function handleRestart(serviceId) {
+    const name = cards.find((card) => card.id === serviceId)?.name || serviceId;
+    if (!window.confirm(`Restart ${name}? REX OS will restart its container and verify the service comes back healthy.`)) {
+      return;
+    }
+
+    setRestarting(serviceId);
+    try {
+      const result = await restartPipelineService(serviceId);
+      if (result.verified) {
+        toastSuccess(`${name} restarted and verified healthy.`);
+      } else {
+        toastWarning(result.warning || `${name} restarted, but the health check timed out.`);
+      }
+      refresh();
+    } catch (err) {
+      const message = err?.response?.data?.error || "Restart failed.";
+      toastError(message);
+    } finally {
+      setRestarting(null);
+    }
+  }
+
+  const pipe = data?.pipeline || {};
+  const pipeMeta = PIPE_STATE_META[pipe.state] || PIPE_STATE_META.IDLE;
+
   return (
     <div className="page">
       <div className="page-head fade-up">
         <h1>Pipeline</h1>
         <p>Direct Link → pyLoad → qBittorrent → Radarr / Sonarr → Media → Jellyfin</p>
       </div>
+
+      {/* Pipeline Control Center */}
+      <section className={`pipe-control fade-up d-1 state-${pipeMeta.cls}`}>
+        <div className="pipe-control-state">
+          <span className={`pipe-state-badge ${pipeMeta.cls}`}>
+            <i />
+            {pipeMeta.label}
+          </span>
+          <div className="pipe-control-title">
+            <h2>Pipeline Control Center</h2>
+            <span>Health: {pipe.health || "—"}</span>
+          </div>
+        </div>
+
+        <div className="pipe-control-stats">
+          <div>
+            <span>Last success</span>
+            <strong>{relativeTime(pipe.lastSuccess)}</strong>
+          </div>
+          <div>
+            <span>Last failure</span>
+            <strong>{relativeTime(pipe.lastFailure)}</strong>
+          </div>
+          <div>
+            <span>Execution</span>
+            <strong>{pipe.executionMs != null ? `${pipe.executionMs}ms` : "—"}</strong>
+          </div>
+          <div>
+            <span>Operation</span>
+            <strong title={pipe.operation || ""}>{pipe.operation || "—"}</strong>
+          </div>
+        </div>
+      </section>
 
       {/* Visual pipeline */}
       <section className="pipe-flow-card fade-up d-1">
@@ -377,7 +462,14 @@ export default function Pipeline() {
             <CardSkeleton />
           </>
         ) : (
-          cards.map((card) => <ServiceCard key={card.id} card={card} />)
+          cards.map((card) => (
+            <ServiceCard
+              key={card.id}
+              card={card}
+              restarting={restarting === card.id}
+              onRestart={handleRestart}
+            />
+          ))
         )}
       </div>
 

@@ -1,5 +1,5 @@
 import "./Header.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bell,
@@ -11,11 +11,37 @@ import {
 
 import useLiveClock from "../../../hooks/useLiveClock";
 import { config } from "../../../data/config";
+import { getNotifications } from "../../../api/notifications";
 
 export default function Header({ onMenu }) {
   const { time, date } = useLiveClock();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const [unread, setUnread] = useState(0);
+
+  // Keep the bell badge in sync with the server-side unread count.
+  useEffect(() => {
+    let active = true;
+
+    async function refreshUnread() {
+      try {
+        const data = await getNotifications();
+        if (active) setUnread(data.unread || 0);
+      } catch {
+        /* backend unreachable — keep the last known count */
+      }
+    }
+
+    refreshUnread();
+    const timer = setInterval(() => {
+      if (!document.hidden) refreshUnread();
+    }, 30000);
+
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, []);
 
   function handleSearch(event) {
     event.preventDefault();
@@ -68,11 +94,13 @@ export default function Header({ onMenu }) {
         <button
           type="button"
           className="notify"
-          onClick={() => navigate("/media")}
-          aria-label="Browse media"
+          onClick={() => navigate("/notifications")}
+          aria-label="Notifications"
         >
           <Bell size={18} />
-          <span className="notify-dot" />
+          {unread > 0 && (
+            <span className="notify-badge">{unread > 99 ? "99+" : unread}</span>
+          )}
         </button>
       </div>
     </header>

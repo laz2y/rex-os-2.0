@@ -1,0 +1,224 @@
+/* =========================
+   ACTIVITY LOG
+========================= */
+
+.activity-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.activity-search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 15px;
+  flex: 1;
+  min-width: 220px;
+  background: var(--card);
+  border: 1px solid var(--glass-border);
+  border-radius: 13px;
+}
+
+.activity-search:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--glow-rgb), 0.15);
+}
+
+.activity-search input {
+  background: none;
+  border: none;
+  outline: none;
+  width: 100%;
+  color: white;
+  font-size: 13.5px;
+}
+
+.activity-search svg {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.activity-filters select {
+  padding: 11px 14px;
+  background: var(--card);
+  border: 1px solid var(--glass-border);
+  border-radius: 13px;
+  color: white;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+
+.activity-filters select:focus {
+  border-color: var(--primary);
+}
+
+.activity-filters select option {
+  background: #0b0f1a;
+  color: white;
+}
+
+.activity-filters .refresh-btn {
+  margin-left: auto;
+}
+
+.clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 15px;
+  border-radius: 13px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.08);
+  color: #fca5a5;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.clear-btn:hover {
+  background: rgba(248, 113, 113, 0.16);
+  transform: translateY(-1px);
+}
+
+.activity-count {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin-top: -14px;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 15px;
+  background: var(--card);
+  border: 1px solid var(--glass-border);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.activity-item:hover {
+  border-color: rgba(var(--glow-rgb), 0.4);
+  transform: translateY(-1px);
+}
+
+.activity-type-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.activity-type-icon.info {
+  background: rgba(56, 189, 248, 0.13);
+  color: #38bdf8;
+}
+
+.activity-type-icon.success {
+  background: rgba(34, 197, 94, 0.13);
+  color: #22c55e;
+}
+
+.activity-type-icon.warning {
+  background: rgba(251, 191, 36, 0.13);
+  color: #fbbf24;
+}
+
+.activity-type-icon.error,
+.activity-type-icon.critical {
+  background: rgba(248, 113, 113, 0.13);
+  color: #f87171;
+}
+
+.activity-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.activity-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.activity-sev {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.activity-sev.info {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.activity-sev.success {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.activity-sev.warning {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.activity-sev.error {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.12);
+}
+
+.activity-sev.critical {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.18);
+}
+
+.activity-time {
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .activity-filters .refresh-btn {
+    margin-left: 0;
+  }
+
+  .activity-search {
+    min-width: 100%;
+  }
+
+  .activity-time {
+    display: none;
+  }
+}

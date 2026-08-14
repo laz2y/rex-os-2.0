@@ -1,4 +1,6 @@
 import {
+  Activity as ActivityIcon,
+  Bell,
   Boxes,
   Camera,
   ChevronRight,
@@ -10,6 +12,7 @@ import {
   Link2,
   LogOut,
   Settings,
+  Stethoscope,
   Workflow,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
@@ -28,6 +31,12 @@ const NAV = [
   { to: "/photos", label: "Photos", icon: Camera },
   { to: "/docker", label: "Docker", icon: Boxes },
   { to: "/system", label: "System", icon: HardDrive },
+];
+
+const CONTROL_NAV = [
+  { to: "/diagnostics", label: "Diagnostics", icon: Stethoscope },
+  { to: "/activity", label: "Activity", icon: ActivityIcon },
+  { to: "/notifications", label: "Notifications", icon: Bell },
 ];
 
 export default function Sidebar({ open, onClose }) {
@@ -65,6 +74,23 @@ export default function Sidebar({ open, onClose }) {
               key={item.to}
               to={item.to}
               end={item.end}
+              className={({ isActive }) =>
+                isActive ? "nav-item active" : "nav-item"
+              }
+              onClick={onClose}
+            >
+              <item.icon size={20} />
+              <span>{item.label}</span>
+              <ChevronRight size={18} className="nav-arrow" />
+            </NavLink>
+          ))}
+
+          <p className="nav-caption">Control</p>
+
+          {CONTROL_NAV.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
               className={({ isActive }) =>
                 isActive ? "nav-item active" : "nav-item"
               }

@@ -1,4 +1,5 @@
 const portainer = require("../services/portainerService");
+const activity = require("../services/activityService");
 
 exports.getDocker = async (req, res) => {
   try {
@@ -36,8 +37,18 @@ exports.getDocker = async (req, res) => {
 };
 
 exports.restartContainer = async (req, res) => {
+  const id = req.params.id;
   try {
-    await portainer.restartContainer(req.params.id);
+    await portainer.restartContainer(id);
+
+    activity.record({
+      type: "docker",
+      service: "docker",
+      action: "restart_container",
+      result: "success",
+      message: `Restarted container ${id}`,
+      severity: "info",
+    });
 
     res.json({
       status: "success",
@@ -45,6 +56,15 @@ exports.restartContainer = async (req, res) => {
     });
   } catch (error) {
     console.error(error.response?.data || error.message);
+
+    activity.record({
+      type: "docker",
+      service: "docker",
+      action: "restart_container",
+      result: "error",
+      message: `Failed to restart container ${id}`,
+      severity: "error",
+    });
 
     res.status(500).json({
       status: "error",
@@ -55,8 +75,18 @@ exports.restartContainer = async (req, res) => {
 };
 
 exports.stopContainer = async (req, res) => {
+  const id = req.params.id;
   try {
-    await portainer.stopContainer(req.params.id);
+    await portainer.stopContainer(id);
+
+    activity.record({
+      type: "docker",
+      service: "docker",
+      action: "stop_container",
+      result: "success",
+      message: `Stopped container ${id}`,
+      severity: "warning",
+    });
 
     res.json({
       status: "success",
@@ -64,6 +94,15 @@ exports.stopContainer = async (req, res) => {
     });
   } catch (error) {
     console.error(error.response?.data || error.message);
+
+    activity.record({
+      type: "docker",
+      service: "docker",
+      action: "stop_container",
+      result: "error",
+      message: `Failed to stop container ${id}`,
+      severity: "error",
+    });
 
     res.status(500).json({
       status: "error",
@@ -74,8 +113,18 @@ exports.stopContainer = async (req, res) => {
 };
 
 exports.startContainer = async (req, res) => {
+  const id = req.params.id;
   try {
-    await portainer.startContainer(req.params.id);
+    await portainer.startContainer(id);
+
+    activity.record({
+      type: "docker",
+      service: "docker",
+      action: "start_container",
+      result: "success",
+      message: `Started container ${id}`,
+      severity: "info",
+    });
 
     res.json({
       status: "success",
@@ -83,6 +132,15 @@ exports.startContainer = async (req, res) => {
     });
   } catch (error) {
     console.error(error.response?.data || error.message);
+
+    activity.record({
+      type: "docker",
+      service: "docker",
+      action: "start_container",
+      result: "error",
+      message: `Failed to start container ${id}`,
+      severity: "error",
+    });
 
     res.status(500).json({
       status: "error",
