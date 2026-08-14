@@ -22,3 +22,9 @@ export async function getPyLoadInfo() {
   const { data } = await apiClient.get("/pyload");
   return data;
 }
+
+/** Remove packages from pyLoad's queue/collector (files stay on disk). */
+export async function removePyLoadPackages(packageIds) {
+  const { data } = await apiClient.post("/pyload/remove", { packageIds });
+  return data;
+}

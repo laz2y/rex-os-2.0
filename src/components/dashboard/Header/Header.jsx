@@ -48,7 +48,8 @@ export default function Header({ onMenu }) {
 
     const term = query.trim();
 
-    navigate(term ? `/media?q=${encodeURIComponent(term)}` : "/media");
+    navigate(term ? `/search?q=${encodeURIComponent(term)}` : "/search");
+    setQuery("");
   }
 
   return (
@@ -86,8 +87,8 @@ export default function Header({ onMenu }) {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search the library…"
-            aria-label="Search the library"
+            placeholder="Search the NAS…"
+            aria-label="Search the NAS"
           />
         </form>
 

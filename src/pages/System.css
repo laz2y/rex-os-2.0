@@ -169,9 +169,236 @@
   transition: width 0.8s ease;
 }
 
+/* ---- REX OS 3.0 System Monitor additions ---- */
+
+.sys-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+.sys-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.sys-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.sys-live i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+  animation: sys-pulse 2s infinite;
+}
+
+.sys-live.polling i {
+  animation: none;
+  opacity: 0.4;
+}
+
+@keyframes sys-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45); }
+  70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.sys-temps {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+
+.sys-temp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  padding: 7px 13px;
+}
+
+.sys-temp-chip strong {
+  color: #fb923c;
+}
+
+.sys-na {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.docker-mini .info-row strong {
+  font-family: inherit;
+}
+
+.net-iface-list {
+  display: grid;
+  gap: 8px;
+}
+
+.net-iface {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.net-iface-name strong {
+  font-family: Consolas, "JetBrains Mono", monospace;
+  font-size: 13px;
+}
+
+.net-iface-name span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.net-iface-bytes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.io-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.io-row > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.io-row strong {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.io-row span {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.io-read { color: #06b6d4; }
+.io-write { color: #f97316; }
+
+.sys-procs-card {
+  margin-top: 20px;
+}
+
+.proc-table {
+  display: grid;
+  gap: 2px;
+}
+
+.proc-colhead {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) 80px 80px 90px;
+  gap: 12px;
+  padding: 0 12px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  opacity: 0.75;
+}
+
+.proc-row {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) 80px 80px 90px;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  transition: background 0.15s ease;
+}
+
+.proc-row:hover {
+  background: rgba(var(--glow-rgb), 0.05);
+}
+
+.proc-pid {
+  font-family: Consolas, "JetBrains Mono", monospace;
+  color: var(--text-secondary);
+}
+
+.proc-cmd {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.proc-cpu,
+.proc-mem,
+.proc-rss {
+  font-family: Consolas, "JetBrains Mono", monospace;
+  color: var(--text-secondary);
+}
+
+.proc-cpu {
+  color: #60a5fa;
+}
+
 @media (max-width: 1100px) {
   .sys-strip {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .proc-colhead {
+    grid-template-columns: 60px minmax(0, 1fr) 60px 60px;
+  }
+
+  .proc-row {
+    grid-template-columns: 60px minmax(0, 1fr) 60px 60px;
+  }
+
+  .proc-rss {
+    display: none;
+  }
+
+  .net-iface {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .net-iface-bytes {
+    align-items: flex-start;
+    flex-direction: row;
+    gap: 14px;
   }
 }
 

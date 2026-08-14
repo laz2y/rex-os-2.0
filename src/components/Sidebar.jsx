@@ -1,5 +1,6 @@
 import {
   Activity as ActivityIcon,
+  Archive,
   Bell,
   Boxes,
   Camera,
@@ -9,8 +10,12 @@ import {
   Download,
   HardDrive,
   Home,
+  LifeBuoy,
   Link2,
   LogOut,
+  PackageCheck,
+  Search,
+  Server,
   Settings,
   Stethoscope,
   Workflow,
@@ -22,21 +27,52 @@ import { useAuth } from "../hooks/useAuth";
 import { config } from "../data/config";
 
 const NAV = [
-  { to: "/", label: "Dashboard", icon: Home, end: true },
-  { to: "/direct-link", label: "Direct Link Add", icon: Link2 },
-  { to: "/downloads", label: "Downloads", icon: Download },
-  { to: "/pipeline", label: "Pipeline", icon: Workflow },
-  { to: "/media", label: "Media", icon: Clapperboard },
-  { to: "/cloud", label: "Cloud", icon: Cloud },
-  { to: "/photos", label: "Photos", icon: Camera },
-  { to: "/docker", label: "Docker", icon: Boxes },
-  { to: "/system", label: "System", icon: HardDrive },
-];
-
-const CONTROL_NAV = [
-  { to: "/diagnostics", label: "Diagnostics", icon: Stethoscope },
-  { to: "/activity", label: "Activity", icon: ActivityIcon },
-  { to: "/notifications", label: "Notifications", icon: Bell },
+  {
+    caption: "Dashboard",
+    items: [{ to: "/", label: "Dashboard", icon: Home, end: true }],
+  },
+  {
+    caption: "Control",
+    items: [
+      { to: "/pipeline", label: "Pipeline", icon: Workflow },
+      { to: "/diagnostics", label: "Diagnostics", icon: Stethoscope },
+      { to: "/activity", label: "Activity", icon: ActivityIcon },
+      { to: "/notifications", label: "Notifications", icon: Bell },
+    ],
+  },
+  {
+    caption: "NAS",
+    items: [
+      { to: "/system", label: "System", icon: Server },
+      { to: "/docker", label: "Docker", icon: Boxes },
+      { to: "/storage", label: "Storage", icon: HardDrive },
+    ],
+  },
+  {
+    caption: "Media",
+    items: [
+      { to: "/media", label: "Media Center", icon: Clapperboard },
+      { to: "/downloads", label: "Downloads", icon: Download },
+      { to: "/photos", label: "Photos", icon: Camera },
+      { to: "/search", label: "Search", icon: Search },
+    ],
+  },
+  {
+    caption: "Cloud",
+    items: [
+      { to: "/cloud", label: "Cloud", icon: Cloud },
+      { to: "/direct-link", label: "Direct Link", icon: Link2 },
+    ],
+  },
+  {
+    caption: "System",
+    items: [
+      { to: "/settings", label: "Settings", icon: Settings },
+      { to: "/updates", label: "Updates", icon: PackageCheck },
+      { to: "/backups", label: "Backups", icon: Archive },
+      { to: "/recovery", label: "Recovery", icon: LifeBuoy },
+    ],
+  },
 ];
 
 export default function Sidebar({ open, onClose }) {
@@ -69,52 +105,27 @@ export default function Sidebar({ open, onClose }) {
         </div>
 
         <nav className="sidebar-nav">
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                isActive ? "nav-item active" : "nav-item"
-              }
-              onClick={onClose}
-            >
-              <item.icon size={20} />
-              <span>{item.label}</span>
-              <ChevronRight size={18} className="nav-arrow" />
-            </NavLink>
+          {NAV.map((group) => (
+            <div key={group.caption}>
+              <p className="nav-caption">{group.caption}</p>
+
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    isActive ? "nav-item active" : "nav-item"
+                  }
+                  onClick={onClose}
+                >
+                  <item.icon size={20} />
+                  <span>{item.label}</span>
+                  <ChevronRight size={18} className="nav-arrow" />
+                </NavLink>
+              ))}
+            </div>
           ))}
-
-          <p className="nav-caption">Control</p>
-
-          {CONTROL_NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                isActive ? "nav-item active" : "nav-item"
-              }
-              onClick={onClose}
-            >
-              <item.icon size={20} />
-              <span>{item.label}</span>
-              <ChevronRight size={18} className="nav-arrow" />
-            </NavLink>
-          ))}
-
-          <p className="nav-caption">Settings</p>
-
-          <NavLink
-            to="/settings"
-            className={({ isActive }) =>
-              isActive ? "nav-item active" : "nav-item"
-            }
-            onClick={onClose}
-          >
-            <Settings size={20} />
-            <span>Settings</span>
-            <ChevronRight size={18} className="nav-arrow" />
-          </NavLink>
         </nav>
 
         <div className="sidebar-bottom">

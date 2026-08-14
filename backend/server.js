@@ -73,7 +73,13 @@ const notificationsRoute = require("./routes/notifications");
 const diagnosticsRoute = require("./routes/diagnostics");
 const storageRoute = require("./routes/storage");
 const terminalRoute = require("./routes/terminal");
+const searchRoute = require("./routes/search");
+const radarrRoute = require("./routes/radarr");
+const sonarrRoute = require("./routes/sonarr");
+const updateRoute = require("./routes/update");
+const backupsRoute = require("./routes/backups");
 const recovery = require("./services/recoveryService");
+const backups = require("./services/backupService");
 
 const app = express();
 
@@ -112,7 +118,7 @@ if (fs.existsSync(distDir)) {
 app.get("/", (req, res) => {
   res.json({
     app: "REX API",
-    version: "2.2.0",
+    version: "3.0.0",
     status: "online",
   });
 });
@@ -120,7 +126,7 @@ app.get("/", (req, res) => {
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
-    version: "2.2.0",
+    version: "3.0.0",
     uptime: process.uptime(),
   });
 });
@@ -139,6 +145,11 @@ app.use("/api/notifications", notificationsRoute);
 app.use("/api/diagnostics", diagnosticsRoute);
 app.use("/api/storage", storageRoute);
 app.use("/api/terminal", terminalRoute);
+app.use("/api/search", searchRoute);
+app.use("/api/radarr", radarrRoute);
+app.use("/api/sonarr", sonarrRoute);
+app.use("/api/update", updateRoute);
+app.use("/api/backups", backupsRoute);
 
 // ⚠️ TEMPORARY — dev-release download route. REMOVE AFTER DOWNLOAD.
 // Serves ONLY the verified rexos-2.2-release.tar.gz archive so the
@@ -167,6 +178,12 @@ app.get("/api/download/rexos-2.2-release.tar.gz", (req, res) => {
 // without spawning background timers.
 if (process.env.REX_DISABLE_RECOVERY !== "true") {
   recovery.start();
+}
+
+// Start automatic REX OS state backups (daily by default). Also guarded so
+// test harnesses never spawn background timers.
+if (process.env.REX_DISABLE_BACKUPS !== "true") {
+  backups.startScheduler();
 }
 
 app.listen(process.env.PORT || 4000, () => {

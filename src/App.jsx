@@ -25,6 +25,11 @@ import Diagnostics from "./pages/Diagnostics";
 import Activity from "./pages/Activity";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
+import Storage from "./pages/Storage";
+import Search from "./pages/Search";
+import Updates from "./pages/Updates";
+import Backups from "./pages/Backups";
+import Recovery from "./pages/Recovery";
 
 /** Scrolls to the top and replays the page transition on route change. */
 function PageTransition() {
@@ -46,9 +51,14 @@ function PageTransition() {
         <Route path="/photos" element={<Photos />} />
         <Route path="/docker" element={<Docker />} />
         <Route path="/system" element={<System />} />
+        <Route path="/storage" element={<Storage />} />
         <Route path="/diagnostics" element={<Diagnostics />} />
         <Route path="/activity" element={<Activity />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/search" element={<Search />} />
+        <Route path="/updates" element={<Updates />} />
+        <Route path="/backups" element={<Backups />} />
+        <Route path="/recovery" element={<Recovery />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Home />} />
       </Routes>

@@ -8,8 +8,10 @@ import {
   CheckCircle2,
   Download,
   ExternalLink,
+  Link2,
   Loader2,
   Magnet,
+  PackageOpen,
   Pause,
   Play,
   Plus,
@@ -26,6 +28,12 @@ import {
   removeTorrent,
   resumeTorrent,
 } from "../services/qBittorrentService";
+import {
+  addDirectLink,
+  getPyLoadInfo,
+  getPyLoadStatus,
+  removePyLoadPackages,
+} from "../services/pyLoadService";
 import { error as toastError, success } from "../services/toastService";
 import { services } from "../data/services";
 
@@ -296,6 +304,18 @@ export default function Downloads() {
   const [confirmDelete, setConfirmDelete] = useState(null); // torrent
   const [deleting, setDeleting] = useState(false);
 
+  // Unified download management: qBittorrent (torrents) + pyLoad (direct links)
+  const [tab, setTab] = useState("qb");
+  const [pyLoadData, setPyLoadData] = useState(null);
+  const [pyLoadLoading, setPyLoadLoading] = useState(true);
+  const [pyLoadError, setPyLoadError] = useState(null);
+  const [pyLoadUrl, setPyLoadUrl] = useState("");
+  const [pyLink, setPyLink] = useState("");
+  const [pyAdding, setPyAdding] = useState(false);
+  const [pyFormError, setPyFormError] = useState(null);
+  const [pyRemoving, setPyRemoving] = useState(null);
+  const [pyConfirmRemove, setPyConfirmRemove] = useState(null);
+
   const qb = services.find((service) => service.id === "qbittorrent");
 
   const load = useCallback(async () => {
@@ -328,6 +348,92 @@ export default function Downloads() {
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [load, reload]);
+
+  const loadPyLoad = useCallback(async () => {
+    try {
+      const data = await getPyLoadStatus();
+      setPyLoadData(data);
+      setPyLoadError(null);
+    } catch (err) {
+      console.error("[REX OS] pyload load failed:", err);
+      setPyLoadError(err);
+    } finally {
+      setPyLoadLoading(false);
+    }
+  }, []);
+
+  // Poll pyLoad while the tab is visible.
+  useEffect(() => {
+    loadPyLoad();
+    const timer = setInterval(() => {
+      if (!document.hidden) loadPyLoad();
+    }, POLL_MS);
+    return () => clearInterval(timer);
+  }, [loadPyLoad, tab]);
+
+  // Resolve the pyLoad web UI URL (server-configured).
+  useEffect(() => {
+    getPyLoadInfo()
+      .then((data) => {
+        if (data && data.url) setPyLoadUrl(data.url);
+      })
+      .catch(() => {
+        /* connectivity is surfaced by the status polling */
+      });
+  }, []);
+
+  async function handlePySubmit(event) {
+    event.preventDefault();
+    setPyFormError(null);
+
+    const trimmed = pyLink.trim();
+    if (!trimmed) {
+      setPyFormError("Enter a download URL first.");
+      return;
+    }
+    try {
+      new URL(trimmed);
+    } catch {
+      setPyFormError("That doesn't look like a valid URL.");
+      return;
+    }
+
+    setPyAdding(true);
+    try {
+      await addDirectLink(trimmed);
+      setPyLink("");
+      setPyLoadLoading(true);
+      loadPyLoad();
+    } catch (err) {
+      setPyFormError(
+        err?.response?.data?.error || err.message || "Failed to add the download.",
+      );
+    } finally {
+      setPyAdding(false);
+    }
+  }
+
+  async function doRemovePyPackages() {
+    const item = pyConfirmRemove;
+    if (!item) return;
+    const ids = [
+      item.packageId,
+      ...(item.packageIds || []),
+    ].filter((id) => id != null);
+    if (!ids.length) return;
+
+    setPyRemoving(item.packageId || "x");
+    try {
+      await removePyLoadPackages(ids);
+      success("Package removed from pyLoad");
+      setPyConfirmRemove(null);
+      loadPyLoad();
+    } catch (err) {
+      toastError(err?.response?.data?.error || "Remove failed");
+    } finally {
+      setPyRemoving(null);
+    }
+  }
 
   // Close the delete dialog on Escape.
   useEffect(() => {
@@ -480,9 +586,39 @@ export default function Downloads() {
     <div className="page">
       <div className="page-head fade-up">
         <h1>Downloads</h1>
-        <p>qBittorrent — torrents, speeds and seeding at a glance</p>
+        <p>Unified download management — qBittorrent torrents + pyLoad direct links</p>
       </div>
 
+      {/* Unified download tabs */}
+      <div className="dl-tabs fade-up" role="tablist" aria-label="Download source">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "qb"}
+          className={`dl-tab ${tab === "qb" ? "active" : ""}`}
+          onClick={() => setTab("qb")}
+        >
+          <Magnet size={16} />
+          qBittorrent
+          <span className="dl-tab-count">{torrents.length}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "pyload"}
+          className={`dl-tab ${tab === "pyload" ? "active" : ""}`}
+          onClick={() => setTab("pyload")}
+        >
+          <PackageOpen size={16} />
+          pyLoad
+          {pyLoadData && pyLoadData.length > 0 && (
+            <span className="dl-tab-count">{pyLoadData.length}</span>
+          )}
+        </button>
+      </div>
+
+      {tab === "qb" && (
+      <>
       {/* Summary */}
       <div className="qb-summary fade-up d-1">
         <div className="qb-chip">
@@ -717,7 +853,7 @@ export default function Downloads() {
         </p>
       </section>
 
-      {/* Delete confirmation */}
+      {/* Delete confirmation (qBittorrent) */}
       {confirmDelete && (
         <div
           className="modal-overlay"
@@ -783,6 +919,272 @@ export default function Downloads() {
             </div>
           </div>
         </div>
+      )}
+      </>
+      )}
+
+      {/* ------------------- pyLoad tab ------------------- */}
+      {tab === "pyload" && (
+        <>
+          {/* Add a direct link */}
+          <section className="qb-card fade-up d-1">
+            <div className="qb-card-head">
+              <div className="qb-card-icon" style={{ background: "#f59e0b" }}>
+                <PackageOpen size={22} />
+              </div>
+              <div>
+                <h2>Add a Direct Link</h2>
+                <p>
+                  Paste a direct download URL. pyLoad resolves the filename,
+                  folder and destination — REX only forwards the link.
+                </p>
+              </div>
+            </div>
+
+            <form className="qb-form" onSubmit={handlePySubmit}>
+              <label className="qb-input">
+                <Link2 size={18} />
+                <input
+                  type="url"
+                  value={pyLink}
+                  onChange={(event) => setPyLink(event.target.value)}
+                  placeholder="https://example.com/file"
+                  aria-label="Direct download URL"
+                  autoComplete="off"
+                  spellCheck="false"
+                  disabled={pyAdding}
+                />
+              </label>
+
+              <button type="submit" className="qb-submit" disabled={pyAdding}>
+                {pyAdding ? (
+                  <>
+                    <Loader2 size={17} className="spin" />
+                    Adding download…
+                  </>
+                ) : (
+                  <>
+                    <Plus size={17} />
+                    Add Download
+                  </>
+                )}
+              </button>
+            </form>
+
+            {pyFormError && (
+              <div className="qb-alert error" role="alert">
+                <XCircle size={16} />
+                {pyFormError}
+              </div>
+            )}
+          </section>
+
+          {/* pyLoad status */}
+          <section className="qb-table fade-up d-2">
+            <div className="qb-table-header">
+              <div>
+                <h2>pyLoad Queue</h2>
+                <span className="qb-version">Direct links & downloads</span>
+              </div>
+
+              <div className="qb-table-actions">
+                {pyLoadUrl && (
+                  <a
+                    className="widget-link"
+                    href={pyLoadUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open pyLoad
+                    <ExternalLink size={14} />
+                  </a>
+                )}
+
+                <button
+                  type="button"
+                  className="refresh-btn"
+                  onClick={() => {
+                    setPyLoadLoading(true);
+                    loadPyLoad();
+                  }}
+                  disabled={pyLoadLoading}
+                >
+                  <RefreshCw size={15} className={pyLoadLoading ? "spin" : ""} />
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            {pyLoadLoading && !pyLoadData ? (
+              <div aria-busy="true">
+                <RowSkeleton />
+                <RowSkeleton />
+              </div>
+            ) : pyLoadError ? (
+              <div className="error-card">
+                <div className="error-icon">
+                  <AlertTriangle size={20} />
+                </div>
+                <div className="error-body">
+                  <h3>pyLoad is unreachable</h3>
+                  <p>
+                    Could not read the download queue from pyLoad. Make sure it
+                    is running and the server credentials are configured.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="retry-btn"
+                  onClick={() => {
+                    setPyLoadLoading(true);
+                    loadPyLoad();
+                  }}
+                >
+                  <RefreshCw size={16} />
+                  Retry
+                </button>
+              </div>
+            ) : pyLoadData.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">
+                  <PackageOpen size={24} />
+                </div>
+                <h3>No active pyLoad downloads</h3>
+                <p>
+                  Paste a direct link above and it will appear here with live
+                  progress, speed and ETA.
+                </p>
+              </div>
+            ) : (
+              <div>
+                {pyLoadData.map((item) => (
+                  <div
+                    key={item.fid ?? `${item.packageId}-${item.name}`}
+                    className={`dl-row state-${item.state}`}
+                  >
+                    <div className="dl-main">
+                      <div className="dl-name" title={item.name}>
+                        {item.name}
+                      </div>
+                      <div className="dl-meta">
+                        <span className={`dl-badge ${item.state}`}>
+                          {item.state === "downloading" && (
+                            <Loader2 size={11} className="spin" />
+                          )}
+                          {String(item.state || "active").replace(/^./, (c) => c.toUpperCase())}
+                        </span>
+                        {item.package && (
+                          <span className="qb-category" title="Package">
+                            {item.package}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {item.progress != null && (
+                      <div
+                        className="dl-progress"
+                        role="progressbar"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={Math.round(item.progress)}
+                      >
+                        <div
+                          className="dl-progress-fill"
+                          style={{ width: `${Math.min(100, Math.max(0, item.progress))}%` }}
+                        />
+                      </div>
+                    )}
+
+                    <div className="dl-stats">
+                      <span title="Size">
+                        <strong>{formatBytes(item.size)}</strong> size
+                      </span>
+                      <span title="Speed">
+                        <strong>{formatSpeed(item.speed)}</strong> speed
+                      </span>
+                      <span title="ETA">
+                        <strong>{formatEta(item.eta)}</strong> eta
+                      </span>
+                    </div>
+
+                    {(item.packageId != null || item.packageIds?.length) && (
+                      <div className="qb-actions">
+                        <button
+                          type="button"
+                          className="qb-row-action danger"
+                          aria-label={`Remove ${item.name}`}
+                          title="Remove from queue"
+                          disabled={pyRemoving != null}
+                          onClick={() => setPyConfirmRemove(item)}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <p className="qb-foot">
+              pyLoad decides filenames and folders — REX only hands over links.
+              The existing pyLoad → Radarr/Sonarr importer handles everything
+              downstream.
+            </p>
+          </section>
+
+          {/* pyLoad remove confirmation */}
+          {pyConfirmRemove && (
+            <div
+              className="modal-overlay"
+              onClick={() => !pyRemoving && setPyConfirmRemove(null)}
+            >
+              <div
+                className="modal-card"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="pyload-remove-title"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="modal-icon">
+                  <Trash2 size={20} />
+                </div>
+                <h3 id="pyload-remove-title">Remove from pyLoad</h3>
+                <p className="modal-name" title={pyConfirmRemove.name}>
+                  {pyConfirmRemove.name}
+                </p>
+                <p className="modal-hint">
+                  Remove this package from pyLoad's queue. Files on disk are
+                  never touched.
+                </p>
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="modal-btn cancel"
+                    onClick={() => setPyConfirmRemove(null)}
+                    disabled={pyRemoving != null}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="modal-btn danger"
+                    onClick={doRemovePyPackages}
+                    disabled={pyRemoving != null}
+                  >
+                    {pyRemoving != null ? (
+                      <Loader2 size={15} className="spin" />
+                    ) : (
+                      <Trash2 size={15} />
+                    )}
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

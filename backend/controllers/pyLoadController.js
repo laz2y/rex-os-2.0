@@ -130,3 +130,38 @@ exports.getStatus = async (req, res) => {
     fail(res, error, "Could not fetch pyLoad status.");
   }
 };
+
+/**
+ * POST /api/pyload/remove — { packageIds: [...] } → pyLoad.deletePackages.
+ * Removes packages from the queue/collector; never touches files on disk.
+ */
+exports.removePackages = async (req, res) => {
+  const { packageIds } = req.body || {};
+  const ids = Array.isArray(packageIds) ? packageIds : packageIds != null ? [packageIds] : [];
+  const clean = ids
+    .map((id) => Number.parseInt(String(id), 10))
+    .filter((id) => Number.isInteger(id) && id > 0);
+
+  if (clean.length === 0) {
+    return res
+      .status(400)
+      .json({ ok: false, error: "Provide at least one package id." });
+  }
+
+  if (!pyLoad.isConfigured()) {
+    return res
+      .status(503)
+      .json({ ok: false, error: "pyLoad is not configured on the server." });
+  }
+
+  try {
+    await pyLoad.deletePackages(clean);
+    res.json({ ok: true, removed: clean.length });
+  } catch (error) {
+    const authStatus = error.response ? error.response.status : error.status;
+    if (authStatus === 401 || authStatus === 403) {
+      pyLoad.resetSession();
+    }
+    fail(res, error, "Failed to remove the package from pyLoad.");
+  }
+};

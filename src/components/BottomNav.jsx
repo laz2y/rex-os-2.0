@@ -1,26 +1,24 @@
 import {
   Boxes,
-  Camera,
   Clapperboard,
-  Cloud,
   Download,
-  HardDrive,
   Home,
-  Link2,
-  Workflow,
+  Search,
+  Server,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
+/**
+ * Mobile bottom navigation — five core destinations only. Everything else
+ * stays reachable through the sidebar drawer. Touch-sized, label + icon.
+ */
 const ITEMS = [
   { to: "/", label: "Home", icon: Home, end: true },
-  { to: "/direct-link", label: "Direct Link", icon: Link2 },
-  { to: "/downloads", label: "Downloads", icon: Download },
-  { to: "/pipeline", label: "Pipeline", icon: Workflow },
+  { to: "/search", label: "Search", icon: Search },
   { to: "/media", label: "Media", icon: Clapperboard },
-  { to: "/cloud", label: "Cloud", icon: Cloud },
-  { to: "/photos", label: "Photos", icon: Camera },
+  { to: "/downloads", label: "Downloads", icon: Download },
   { to: "/docker", label: "Docker", icon: Boxes },
-  { to: "/system", label: "System", icon: HardDrive },
+  { to: "/system", label: "System", icon: Server },
 ];
 
 export default function BottomNav() {
@@ -35,7 +33,7 @@ export default function BottomNav() {
             isActive ? "bottom-item active" : "bottom-item"
           }
         >
-          <item.icon size={20} />
+          <item.icon size={21} />
           <span>{item.label}</span>
         </NavLink>
       ))}

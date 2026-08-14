@@ -869,3 +869,168 @@
     width: 100%;
   }
 }
+
+/* ---- REX OS 3.0: unified download tabs + pyLoad rows ---- */
+
+.dl-tabs {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  background: var(--card);
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+
+.dl-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dl-tab:hover {
+  color: white;
+}
+
+.dl-tab.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 6px 16px rgba(var(--glow-rgb), 0.3);
+}
+
+.dl-tab-count {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.dl-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto auto;
+  gap: 16px;
+  align-items: center;
+  padding: 15px 14px;
+  border-radius: 13px;
+  transition: background 0.2s ease;
+}
+
+.dl-row + .dl-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dl-row:hover {
+  background: rgba(var(--glow-rgb), 0.05);
+}
+
+.dl-main {
+  min-width: 0;
+}
+
+.dl-name {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+
+.dl-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+}
+
+.dl-badge.downloading {
+  color: #60a5fa;
+  border-color: rgba(96, 165, 250, 0.35);
+}
+
+.dl-badge.finished {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.dl-badge.failed {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.dl-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.dl-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary);
+  transition: width 0.5s ease;
+}
+
+.dl-stats {
+  display: flex;
+  gap: 16px;
+  white-space: nowrap;
+}
+
+.dl-stats span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.dl-stats strong {
+  color: white;
+  font-family: Consolas, "JetBrains Mono", monospace;
+}
+
+@media (max-width: 900px) {
+  .dl-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 10px;
+  }
+
+  .dl-progress {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .dl-stats {
+    grid-column: 1;
+    grid-row: 3;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .dl-row .qb-actions {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+  }
+}

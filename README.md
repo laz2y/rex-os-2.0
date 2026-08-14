@@ -26,9 +26,14 @@ and per-service health checks.
 | `/media` | Jellyfin media library (search/filter/detail) | `src/pages/Media.jsx` |
 | `/cloud` | Nextcloud overview (users, storage, activity) | `src/pages/Cloud.jsx` |
 | `/photos` | Immich overview (stats, albums) | `src/pages/Photos.jsx` |
-| `/docker` | Container list + start/stop/restart/logs | `src/pages/Docker.jsx` |
-| `/system` | NAS health & monitoring | `src/pages/System.jsx` |
-| `/settings` | Themes + connection tests | `src/pages/Settings.jsx` |
+| `/docker` | Docker Manager 2.0 — search/filter/sort, live stats, logs | `src/pages/Docker.jsx` |
+| `/system` | Real-time NAS monitoring (CPU/RAM/swap/network/disk I/O/procs) | `src/pages/System.jsx` |
+| `/storage` | Storage dashboard — filesystems, thresholds, disk I/O | `src/pages/Storage.jsx` |
+| `/search` | Global search across media, downloads, Docker, pages | `src/pages/Search.jsx` |
+| `/updates` | Update Manager — upload, validate, rollback point, install | `src/pages/Updates.jsx` |
+| `/backups` | Backups — manual/automatic REX state snapshots + restore | `src/pages/Backups.jsx` |
+| `/recovery` | Auto-recovery monitor + update rollback points | `src/pages/Recovery.jsx` |
+| `/settings` | Themes, connections, notification preferences | `src/pages/Settings.jsx` |
 
 All app routes are wrapped in `RequireAuth` (`src/components/RequireAuth.jsx`),
 which sends signed-out users to `/login?returnTo=<route>` and returns them after
@@ -90,12 +95,44 @@ In production, `node server.js` serves both the built UI (`dist/`) and the
 - `GET /api/jellyfin` (+ `/users`, `/latest`, `/items`, `/resume`, `/sessions`, `/poster/:id`, `/backdrop/:id`)
 - `GET /api/nextcloud/status|info|users|storage|activity`
 - `GET /api/immich/overview`
-- `GET /api/pyload` · `POST /api/pyload/add` · `GET /api/pyload/status`
+- `GET /api/pyload` · `POST /api/pyload/add` · `GET /api/pyload/status` · `POST /api/pyload/remove`
+- `GET /api/qbittorrent` · `POST /api/qbittorrent/add|pause|resume|remove`
+- `GET /api/radarr/overview` · `GET /api/sonarr/overview` — Media Center ARR sections
+- `GET /api/search?q=` — global search (media, downloads, Docker, activity, pages)
+- `GET /api/pipeline` · `POST /api/pipeline/restart/:service` · `POST /api/pipeline/restart-group` · `GET /api/pipeline/recovery`
+- `GET /api/diagnostics` · `GET /api/activity` · `GET /api/notifications`
+- `GET /api/system/metrics` · `GET /api/storage` · `/api/terminal/*` — session-authenticated
+- `GET|POST /api/update/*` · `GET|POST|DELETE /api/backups` — session-authenticated
 - `POST /api/auth/login` · `POST /api/auth/logout` · `GET /api/auth/me`
 
 The Direct Link flow: REX only hands the URL to pyLoad (`add_package`); pyLoad
 decides the filename, and the existing pyLoad → Radarr/Sonarr importer handles
 everything downstream. REX never renames or classifies downloads.
+
+## REX OS 3.0 additions
+
+- **System Monitoring** — `/api/system/metrics` (cached 4s) feeds the System
+  page: CPU deltas from `/proc/stat`, memory/swap, per-interface network
+  throughput, disk I/O, top processes, thermal zones and a Docker overview.
+- **Docker Manager 2.0** — search, status filters, sorting, live per-container
+  CPU/RAM/network/block-I/O stats and curated inspect (env vars are never
+  exposed) on top of the existing Portainer abstraction.
+- **Storage Dashboard** — filesystem inventory with `REX_STORAGE_WARN` /
+  `REX_STORAGE_CRIT` thresholds, shared with Diagnostics and Auto-Recovery.
+- **Media Center** — Jellyfin plus Radarr/Sonarr overviews (library, missing,
+  queue, recent activity).
+- **Unified Downloads** — one page with qBittorrent and pyLoad tabs.
+- **Global Search** — debounced `/api/search` with 15s server-side caching.
+- **Push notifications (fallback)** — browser Notification API while REX OS
+  is open; per-category toggles in Settings. No external push provider needed.
+- **Update Manager** — upload → validate (safe archive, manifest, semver) →
+  rollback point → install (stage + syntax-check + verify) with history and
+  rollback. The running API cannot restart its own container; installs are
+  staged and the container is recreated on the NAS to activate (see
+  `rex-updater/DESIGN.md`).
+- **Backups** — manual + automatic (daily) REX state snapshots with restore;
+  never includes media or secrets.
+- **Recovery** — auto-recovery monitor status plus update rollback points.
 
 ## Frontend conventions
 

@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Search,
   Sparkles,
+  Tv,
   X,
 } from "lucide-react";
 
@@ -19,7 +20,26 @@ import {
   getResumeMedia,
   mediaUrl,
 } from "../services/jellyfinService";
+import {
+  getRadarrOverview,
+  getSonarrOverview,
+} from "../services/mediaService";
 import { services } from "../data/services";
+
+const ARR_EVENT_LABEL = {
+  grabbed: "Grabbed",
+  downloadFolderImported: "Imported",
+  downloadFailed: "Failed",
+};
+
+function relativeTime(iso) {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 45000) return "just now";
+  if (diff < 3600000) return `${Math.max(1, Math.floor(diff / 60000))}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 const TYPES = [
   { id: "", label: "All" },
@@ -86,6 +106,108 @@ function PosterCard({ item, onOpen }) {
   );
 }
 
+function ArrCard({ title, icon: Icon, color, overview, state, onRetry, emptyText }) {
+  const loading = state.loading && !overview;
+  const failed = state.error || (overview && overview.status === "error");
+  const configured = overview && overview.configured !== false;
+  const recent = overview?.recent || [];
+
+  return (
+    <section className="arr-card fade-up">
+      <div className="arr-card-head">
+        <div className="arr-card-title">
+          <div className="arr-card-icon" style={{ background: color }}>
+            <Icon size={18} />
+          </div>
+          <h2>{title}</h2>
+        </div>
+
+        {overview && configured && (
+          <span className={`arr-state ${overview.status}`}>
+            <i />
+            {overview.status === "connected"
+              ? overview.version
+                ? `v${overview.version}`
+                : "Connected"
+              : "Unavailable"}
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <div aria-busy="true">
+          <div className="skeleton sk-line" />
+          <div className="skeleton sk-line" />
+          <div className="skeleton sk-line" />
+        </div>
+      ) : failed || !configured ? (
+        <div className="arr-empty">
+          <p>
+            {!configured
+              ? `${title} is not configured on the server.`
+              : overview?.detail || `${title} is unreachable.`}
+          </p>
+          {configured && (
+            <button type="button" className="retry-btn" onClick={onRetry}>
+              <RefreshCw size={14} />
+              Retry
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="arr-stats">
+            {overview.movieCount != null && (
+              <div>
+                <strong>{overview.movieCount}</strong>
+                <span>Movies</span>
+              </div>
+            )}
+            {overview.seriesCount != null && (
+              <div>
+                <strong>{overview.seriesCount}</strong>
+                <span>Series</span>
+              </div>
+            )}
+            {overview.missingCount != null && (
+              <div>
+                <strong className={overview.missingCount > 0 ? "warn" : ""}>{overview.missingCount}</strong>
+                <span>Missing</span>
+              </div>
+            )}
+            {overview.queueCount != null && (
+              <div>
+                <strong>{overview.queueCount}</strong>
+                <span>Queue</span>
+              </div>
+            )}
+          </div>
+
+          <div className="arr-events">
+            {recent.length === 0 ? (
+              <p className="arr-empty-text">{emptyText}</p>
+            ) : (
+              recent.slice(0, 5).map((event) => (
+                <div className="arr-event" key={event.id}>
+                  <span className={`arr-event-dot ${event.eventType}`} />
+                  <div className="arr-event-body">
+                    <strong title={event.title}>{event.title}</strong>
+                    {event.detail && <span>{event.detail}</span>}
+                  </div>
+                  <div className="arr-event-meta">
+                    <em>{ARR_EVENT_LABEL[event.eventType] || event.eventType}</em>
+                    <span>{relativeTime(event.date)}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 export default function Media() {
   const [searchParams] = useSearchParams();
 
@@ -105,6 +227,12 @@ export default function Media() {
 
   const [resume, setResume] = useState([]);
   const [resumeState, setResumeState] = useState({ loading: true, error: null });
+
+  const [radarr, setRadarr] = useState(null);
+  const [radarrState, setRadarrState] = useState({ loading: true, error: null });
+
+  const [sonarr, setSonarr] = useState(null);
+  const [sonarrState, setSonarrState] = useState({ loading: true, error: null });
 
   const jellyfin = services.find((service) => service.id === "jellyfin");
 
@@ -135,6 +263,30 @@ export default function Media() {
     } catch (err) {
       console.error("[REX OS] resume load failed:", err);
       setResumeState({ loading: false, error: err });
+    }
+  }, []);
+
+  const loadRadarr = useCallback(async () => {
+    setRadarrState({ loading: true, error: null });
+    try {
+      const data = await getRadarrOverview();
+      setRadarr(data);
+      setRadarrState({ loading: false, error: null });
+    } catch (err) {
+      console.error("[REX OS] radarr overview failed:", err);
+      setRadarrState({ loading: false, error: err });
+    }
+  }, []);
+
+  const loadSonarr = useCallback(async () => {
+    setSonarrState({ loading: true, error: null });
+    try {
+      const data = await getSonarrOverview();
+      setSonarr(data);
+      setSonarrState({ loading: false, error: null });
+    } catch (err) {
+      console.error("[REX OS] sonarr overview failed:", err);
+      setSonarrState({ loading: false, error: err });
     }
   }, []);
 
@@ -171,7 +323,9 @@ export default function Media() {
   useEffect(() => {
     loadRecent();
     loadResume();
-  }, [loadRecent, loadResume]);
+    loadRadarr();
+    loadSonarr();
+  }, [loadRecent, loadResume, loadRadarr, loadSonarr]);
 
   // Close the detail modal on Escape.
   useEffect(() => {
@@ -294,6 +448,28 @@ export default function Media() {
           </div>
         )}
       </section>
+
+      {/* ARR Center — Radarr & Sonarr overview */}
+      <div className="arr-grid">
+        <ArrCard
+          title="Radarr"
+          icon={Film}
+          color="#eab308"
+          overview={radarr}
+          state={radarrState}
+          onRetry={loadRadarr}
+          emptyText="No recent movie activity."
+        />
+        <ArrCard
+          title="Sonarr"
+          icon={Tv}
+          color="#f43f5e"
+          overview={sonarr}
+          state={sonarrState}
+          onRetry={loadSonarr}
+          emptyText="No recent series activity."
+        />
+      </div>
 
       {/* Library */}
       <section className="media-section fade-up">

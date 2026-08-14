@@ -2,6 +2,7 @@ import "./Settings.css";
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  Bell,
   Boxes,
   Camera,
   Check,
@@ -19,6 +20,13 @@ import { useTheme } from "../hooks/useTheme";
 import { resolveArtwork } from "../core/themes/artwork";
 import { config } from "../data/config";
 import { getConnections, testConnection } from "../api/connections";
+import {
+  CATEGORIES,
+  getPrefs,
+  savePrefs,
+  requestPermission,
+  permissionState,
+} from "../services/pushService";
 
 /** Converts a hex accent to an "r, g, b" string for rgba() usage in CSS vars. */
 function hexToRgb(hex) {
@@ -96,10 +104,46 @@ function ArtworkThumb({ option }) {
   );
 }
 
+function Toggle({ checked, onChange, label }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      className={`settings-toggle ${checked ? "on" : ""}`}
+      onClick={() => onChange(!checked)}
+    >
+      <span className="settings-toggle-knob" />
+    </button>
+  );
+}
+
 export default function Settings() {
   const { theme, themes, setTheme } = useTheme();
   const [statuses, setStatuses] = useState(idleStates);
   const [testing, setTesting] = useState({});
+  const [pushPrefs, setPushPrefs] = useState(() => getPrefs());
+  const [pushPermission, setPushPermission] = useState(() => permissionState());
+  const [requesting, setRequesting] = useState(false);
+
+  function updatePushPrefs(next) {
+    setPushPrefs(next);
+    savePrefs(next);
+  }
+
+  async function handleEnablePush() {
+    setRequesting(true);
+    try {
+      const result = await requestPermission();
+      setPushPermission(result);
+      if (result === "granted") {
+        updatePushPrefs({ ...pushPrefs, enabled: true });
+      }
+    } finally {
+      setRequesting(false);
+    }
+  }
 
   // Live background preview: swap the artwork slot while hovering a card.
   const previewTheme = useCallback((option) => {
@@ -247,6 +291,81 @@ export default function Settings() {
             </button>
           ))}
         </div>
+      </section>
+
+      <section className="settings-section fade-up">
+        <h2>
+          <Bell size={18} /> Notifications
+        </h2>
+        <p>
+          Browser notifications for REX OS events (pipeline failures, recovery,
+          storage warnings, download failures…). This uses the browser's native
+          Notification API while REX OS is open — a real push service needs an
+          external provider, which a self-hosted NAS does not require. The
+          in-app Notifications page always works regardless of this setting.
+        </p>
+
+        <div className="push-row">
+          <div className="push-row-info">
+            <strong>Enable browser notifications</strong>
+            <span>
+              {pushPermission === "granted"
+                ? "Permission granted"
+                : pushPermission === "denied"
+                ? "Permission blocked in the browser — allow notifications for this site"
+                : "Notifications are off"}
+            </span>
+          </div>
+
+          {pushPermission !== "granted" ? (
+            <button
+              type="button"
+              className="test-btn"
+              onClick={handleEnablePush}
+              disabled={requesting || pushPermission === "unsupported"}
+            >
+              {requesting ? (
+                <RefreshCw size={13} className="spin" />
+              ) : (
+                <Bell size={13} />
+              )}
+              {pushPermission === "unsupported"
+                ? "Unsupported browser"
+                : pushPermission === "denied"
+                ? "Re-enable in browser settings"
+                : "Enable"}
+            </button>
+          ) : (
+            <Toggle
+              checked={pushPrefs.enabled}
+              onChange={(value) => updatePushPrefs({ ...pushPrefs, enabled: value })}
+              label="Enable browser notifications"
+            />
+          )}
+        </div>
+
+        {pushPrefs.enabled && pushPermission === "granted" && (
+          <div className="push-categories">
+            {CATEGORIES.map((category) => (
+              <div className="push-cat-row" key={category.id}>
+                <span>{category.label}</span>
+                <Toggle
+                  checked={pushPrefs.categories[category.id] !== false}
+                  onChange={(value) =>
+                    updatePushPrefs({
+                      ...pushPrefs,
+                      categories: {
+                        ...pushPrefs.categories,
+                        [category.id]: value,
+                      },
+                    })
+                  }
+                  label={`Notify on ${category.label}`}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="settings-section fade-up">

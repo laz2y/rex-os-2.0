@@ -135,7 +135,7 @@ async function servicesSection() {
   return { status, services: entries, failedCount: failed.length };
 }
 
-const APP_VERSION = "2.2.0";
+const APP_VERSION = "3.0.0";
 
 function networkSection(services) {
   const failed = services.filter((entry) => ["offline", "error", "auth_failed"].includes(entry.status));

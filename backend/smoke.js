@@ -156,6 +156,10 @@ function summarize(result) {
     "/api/notifications",
     "/api/diagnostics",
     "/api/auth/me",
+    "/api/radarr/overview",
+    "/api/sonarr/overview",
+    "/api/search?q=test",
+    "/api/search?q=",
   ];
 
   // Auth login probe (wrong password must be rejected — 401).
@@ -188,7 +192,42 @@ function summarize(result) {
     "/api/system/metrics",
     "/api/storage",
     "/api/terminal/info",
+    "/api/update/status",
+    "/api/backups",
   ];
+  for (const path of authPaths) {
+    console.log(summarizeAuth(await probeAuth(path)));
+  }
+
+  // Backups: create with a valid session, then list.
+  if (authCookie) {
+    const created = await probe("/api/backups", {
+      method: "POST",
+      headers: { Cookie: authCookie },
+    });
+    console.log(
+      `  POST /api/backups (auth) -> HTTP ${created.status}  ${created.body?.backup ? `id=${created.body.backup.id} bytes=${created.body.backup.bytes} type=${created.body.backup.type}` : JSON.stringify(created.body)}`
+    );
+    const id = created.body?.backup?.id;
+    if (id) {
+      const deleted = await probe(`/api/backups/${id}`, {
+        method: "DELETE",
+        headers: { Cookie: authCookie },
+      });
+      console.log(`  DELETE /api/backups/:id (auth) -> HTTP ${deleted.status}  ${JSON.stringify(deleted.body)}`);
+    }
+  } else {
+    console.log("  (no JWT_SECRET — skipping backup create/delete flow)");
+  }
+
+  // Update flow guards: validate without an upload must fail cleanly.
+  if (authCookie) {
+    const noUpload = await probe("/api/update/validate", {
+      method: "POST",
+      headers: { Cookie: authCookie },
+    });
+    console.log(`  POST /api/update/validate (no package) -> HTTP ${noUpload.status}  ${JSON.stringify(noUpload.body)}`);
+  }
   for (const path of authPaths) {
     console.log(summarizeAuth(await probeAuth(path)));
   }
@@ -208,6 +247,7 @@ function summarize(result) {
   }
 
   // Terminal end-to-end: create -> input -> output -> interrupt -> close.
+  /* (Phase 2 terminal flow kept below) */
   if (authCookie) {
     try {
       const created = await probe("/api/terminal/session", {
