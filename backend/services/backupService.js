@@ -23,7 +23,7 @@ const notification = require("./notificationService");
  *     daily backups; each is recorded in Activity + a notification.
  */
 
-const APP_VERSION = process.env.REX_APP_VERSION || "3.0.0";
+const APP_VERSION = process.env.REX_APP_VERSION || "2.4.0";
 
 const DATA_DIR = stateStore.DATA_DIR;
 const BACKUPS_DIR = path.join(DATA_DIR, "backups");

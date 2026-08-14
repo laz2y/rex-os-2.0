@@ -1,4 +1,4 @@
-/* REX OS 3.0 service worker
+/* REX OS 2.4.0 service worker
  * Conservative caching:
  *  - navigations: network first, fall back to the cached shell when offline
  *  - same-origin static assets: stale-while-revalidate
@@ -9,7 +9,7 @@
  * immediately; the app listens for controllerchange and reloads once so a
  * new deploy is picked up as soon as it is available.
  */
-const CACHE = "rex-os-v3";
+const CACHE = "rex-os-v2.4";
 const PRECACHE = [
   "/",
   "/manifest.webmanifest",
