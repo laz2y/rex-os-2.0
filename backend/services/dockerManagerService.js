@@ -146,8 +146,56 @@ async function getContainerInspect(id) {
   };
 }
 
+/* ------------------------------------------------------------------ *
+ * Bulk stats — one round-trip for the Docker page's resource columns.
+ * Cached briefly + single-flight so the 15s client poll never hammers
+ * Portainer with N per-container stats calls.
+ * ------------------------------------------------------------------ */
+const STATS_TTL_MS = 20000;
+const STATS_CONCURRENCY = 6;
+let statsCache = null;
+let statsCacheAt = 0;
+let statsInflight = null;
+
+async function getAllContainerStats() {
+  const now = Date.now();
+  if (statsCache && now - statsCacheAt < STATS_TTL_MS) return statsCache;
+  if (statsInflight) return statsInflight;
+
+  statsInflight = (async () => {
+    const list = await getContainers();
+    const running = list.filter((c) => c.state === "running");
+    const results = {};
+
+    for (let i = 0; i < running.length; i += STATS_CONCURRENCY) {
+      const batch = running.slice(i, i + STATS_CONCURRENCY);
+      await Promise.all(
+        batch.map(async (container) => {
+          try {
+            const stats = await getContainerStats(container.id);
+            results[container.id] = stats;
+          } catch {
+            /* container stopped between list & stats — skip silently */
+          }
+        })
+      );
+    }
+
+    statsCache = results;
+    statsCacheAt = Date.now();
+    return results;
+  })();
+
+  try {
+    return await statsInflight;
+  } finally {
+    statsInflight = null;
+  }
+}
+
 module.exports = {
   getContainers,
   getContainerStats,
   getContainerInspect,
+  getAllContainerStats,
 };

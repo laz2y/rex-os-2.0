@@ -1,11 +1,10 @@
 import "./Storage.css";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
   ArrowDownToLine,
   ArrowUpFromLine,
-  Database,
   HardDrive,
   RefreshCw,
   Server,
@@ -13,133 +12,127 @@ import {
 
 import { getStorage } from "../api/storage";
 
-function formatBytes(value) {
-  if (value == null || !Number.isFinite(value)) return "—";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  let size = value;
-  let unit = 0;
-  while (size >= 1024 && unit < units.length - 1) {
-    size /= 1024;
-    unit += 1;
-  }
-  return `${size >= 100 || unit === 0 ? Math.round(size) : size.toFixed(1)} ${units[unit]}`;
-}
+const POLL_MS = 30000;
 
-function formatRate(value) {
-  if (value == null || !Number.isFinite(value) || value <= 0) return "—";
-  return `${formatBytes(value)}/s`;
+function formatBytes(bytes) {
+  if (!bytes) return "—";
+  const gb = bytes / 1024 / 1024 / 1024;
+  return gb >= 1024 ? `${(gb / 1024).toFixed(1)} TB` : `${gb.toFixed(1)} GB`;
 }
 
 function levelColor(level) {
-  if (level === "CRITICAL") return "#ef4444";
-  if (level === "WARNING") return "#f59e0b";
-  return "var(--primary)";
+  switch (level) {
+    case "CRITICAL":
+      return "#ef4444";
+    case "WARNING":
+      return "#f59e0b";
+    case "NORMAL":
+      return "#22c55e";
+    default:
+      return "var(--primary)";
+  }
 }
 
-function levelLabel(level) {
-  if (level === "CRITICAL") return "Critical";
-  if (level === "WARNING") return "Warning";
-  if (level === "NORMAL") return "Normal";
-  return "Unknown";
+function LevelBadge({ level }) {
+  if (!level) return null;
+  return (
+    <span
+      className="storage-level"
+      style={{ color: levelColor(level), borderColor: `${levelColor(level)}55` }}
+    >
+      {level}
+    </span>
+  );
 }
 
-export default function Storage() {
+function UsageBar({ percent, warn, crit }) {
+  const color =
+    percent > crit ? "#ef4444" : percent > warn ? "#f59e0b" : "var(--primary)";
+  const width = Math.max(0, Math.min(100, percent ?? 0));
+
+  return (
+    <div className="storage-bar-wrap">
+      <div className="storage-bar">
+        <div className="storage-bar-fill" style={{ width: `${width}%`, background: color }} />
+        {warn != null && (
+          <span className="storage-mark" style={{ left: `${warn}%` }} title={`WARNING at ${warn}%`} />
+        )}
+        {crit != null && (
+          <span className="storage-mark crit" style={{ left: `${crit}%` }} title={`CRITICAL at ${crit}%`} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function StoragePage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const pollTimer = useRef(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const result = await getStorage();
       setData(result);
+      setError(null);
     } catch (err) {
       console.error("[REX OS] storage load failed:", err);
-      setError(err);
+      if (!data) setError(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [data]);
 
   useEffect(() => {
     load();
+    pollTimer.current = setInterval(() => {
+      if (!document.hidden) load();
+    }, POLL_MS);
+    return () => clearInterval(pollTimer.current);
   }, [load]);
 
-  const root = data?.root;
+  if (loading && !data) {
+    return (
+      <div className="page">
+        <div className="page-head fade-up">
+          <h1>Storage</h1>
+          <p>Filesystems &amp; Capacity</p>
+        </div>
+        <div className="skeleton storage-hero-sk" />
+        <div className="skeleton storage-panel-sk" />
+        <div className="skeleton storage-panel-sk" />
+      </div>
+    );
+  }
+
+  const root = data?.root || null;
   const filesystems = data?.filesystems || [];
   const warnings = data?.warnings || [];
+  const io = data?.io || null;
   const thresholds = data?.thresholds || { warn: 70, crit: 85 };
-  const io = data?.io;
-
-  const usedPct = root?.usedPercent ?? null;
-  const level = root?.level || data?.overall || "UNKNOWN";
-
-  const statCards = [
-    {
-      label: "Total capacity",
-      value: formatBytes(root?.total),
-      icon: Database,
-      color: "var(--primary)",
-    },
-    {
-      label: "Used",
-      value: formatBytes(root?.used),
-      icon: HardDrive,
-      color: levelColor(level),
-    },
-    {
-      label: "Free",
-      value: formatBytes(root?.free),
-      icon: Server,
-      color: "#22c55e",
-    },
-    {
-      label: "Usage",
-      value: usedPct != null ? `${usedPct}%` : "—",
-      icon: AlertTriangle,
-      color: levelColor(level),
-      sub: levelLabel(level),
-    },
-  ];
 
   return (
     <div className="page">
       <div className="page-head fade-up">
         <h1>Storage</h1>
-        <p>Filesystems, usage thresholds and disk I/O on the NAS</p>
-      </div>
+        <p>Filesystems &amp; Capacity</p>
 
-      {/* Summary */}
-      <div className="st-summary fade-up d-1">
-        {statCards.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div className="summary-chip" key={stat.label}>
-              <div
-                className="chip-icon"
-                style={{ background: stat.color, boxShadow: `0 10px 24px ${stat.color}55` }}
-              >
-                <Icon size={22} />
-              </div>
-              <div>
-                <strong>{stat.value}</strong>
-                <span>
-                  {stat.label}
-                  {stat.sub ? ` · ${stat.sub}` : ""}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+        <div className="storage-head-actions">
+          <span className="storage-overall" style={{ color: levelColor(data?.overall) }}>
+            <i style={{ background: levelColor(data?.overall) }} />
+            {data?.overall || "UNKNOWN"}
+          </span>
+          <button type="button" className="refresh-btn" onClick={load} disabled={loading}>
+            <RefreshCw size={15} className={loading ? "spin" : ""} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error && (
         <div className="offline-strip fade-up">
-          <span>
-            <AlertTriangle size={15} />
-            Storage telemetry unavailable
-          </span>
+          <span>Storage information unavailable — showing the last known snapshot</span>
           <button type="button" onClick={load}>
             <RefreshCw size={13} />
             Retry
@@ -147,178 +140,157 @@ export default function Storage() {
         </div>
       )}
 
-      {/* Root usage + thresholds */}
-      <section className="st-card fade-up d-2">
-        <div className="st-card-head">
-          <h2>
-            <HardDrive size={18} />
-            Root Filesystem
-          </h2>
-          <span className={`st-level ${level.toLowerCase()}`}>
-            <i /> {levelLabel(level)}
-          </span>
-        </div>
-
-        {usedPct != null ? (
-          <>
-            <div className="st-bar">
-              <div
-                className={`st-bar-fill ${level.toLowerCase()}`}
-                style={{ width: `${Math.min(100, usedPct)}%` }}
-              />
-            </div>
-
-            <div className="st-bar-meta">
-              <span>
-                <strong>{usedPct}%</strong> used — {formatBytes(root.used)} of {formatBytes(root.total)}
-              </span>
-              <span>{formatBytes(root.free)} free</span>
-              <span className="st-thresholds">
-                Threshold {thresholds.warn}% warn · {thresholds.crit}% crit
-              </span>
-            </div>
-          </>
-        ) : (
-          <p className="st-empty">Root filesystem usage is not available on this host.</p>
-        )}
-      </section>
-
-      {/* Warnings */}
       {warnings.length > 0 && (
-        <section className="st-card warn fade-up d-2">
-          <div className="st-card-head">
-            <h2>
-              <AlertTriangle size={18} />
-              Storage Warnings
-            </h2>
-          </div>
-          <div className="st-warn-list">
-            {warnings.map((warning) => (
-              <div className="st-warn-row" key={`${warning.mount}-${warning.level}`}>
-                <span className={`st-warn-dot ${warning.level.toLowerCase()}`} />
-                <strong>{warning.mount}</strong>
+        <div className="storage-warnings fade-up d-1">
+          {warnings.map((warning) => (
+            <div className="storage-warning" key={warning.mount}>
+              <AlertTriangle size={16} />
+              <div>
+                <strong>
+                  {warning.mount} — {warning.usedPercent}% used
+                </strong>
                 <span>
-                  {warning.usedPercent}% used — {levelLabel(warning.level)}
+                  {warning.level} threshold reached (WARNING &gt; {thresholds.warn}% · CRITICAL &gt;{" "}
+                  {thresholds.crit}%)
                 </span>
               </div>
-            ))}
-          </div>
-        </section>
+              <LevelBadge level={warning.level} />
+            </div>
+          ))}
+        </div>
       )}
 
-      {/* Filesystems */}
-      <section className="st-card fade-up d-3">
-        <div className="st-card-head">
-          <h2>Filesystems</h2>
-          <button type="button" className="refresh-btn" onClick={load} disabled={loading}>
-            <RefreshCw size={15} className={loading ? "spin" : ""} />
-            Refresh
-          </button>
-        </div>
+      <div className="storage-grid fade-up d-1">
+        {/* Root filesystem hero */}
+        <section className="storage-hero">
+          <div className="storage-hero-head">
+            <div className="storage-hero-icon">
+              <HardDrive size={24} />
+            </div>
+            <div>
+              <h2>Root filesystem</h2>
+              <span>{root ? "Primary volume" : "Unavailable"}</span>
+            </div>
+            <LevelBadge level={root?.level} />
+          </div>
 
-        {loading && !data ? (
-          <div aria-busy="true">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div className="st-fs-row skeleton-row" key={index}>
-                <div className="skeleton sk-title" />
-                <div className="skeleton sk-line" />
+          {root ? (
+            <>
+              <div className="storage-hero-nums">
+                <div>
+                  <strong>{formatBytes(root.total)}</strong>
+                  <span>Total</span>
+                </div>
+                <div>
+                  <strong style={{ color: levelColor(root.level) }}>{formatBytes(root.used)}</strong>
+                  <span>Used · {root.usedPercent}%</span>
+                </div>
+                <div>
+                  <strong>{formatBytes(root.free)}</strong>
+                  <span>Free</span>
+                </div>
+              </div>
+
+              <UsageBar percent={root.usedPercent} warn={thresholds.warn} crit={thresholds.crit} />
+
+              <p className="storage-hero-thresholds">
+                Thresholds — WARNING &gt; {thresholds.warn}% · CRITICAL &gt; {thresholds.crit}%
+              </p>
+            </>
+          ) : (
+            <p className="storage-na">Root filesystem usage is not available on this host.</p>
+          )}
+        </section>
+
+        {/* Disk I/O */}
+        <section className="storage-panel storage-io">
+          <h2>
+            <ArrowDownToLine size={17} />
+            Disk I/O
+          </h2>
+          {io ? (
+            <div className="io-row">
+              <div>
+                <strong className="io-read">↓ {formatRate(io.readBps)}</strong>
+                <span>read</span>
+              </div>
+              <div>
+                <strong className="io-write">↑ {formatRate(io.writeBps)}</strong>
+                <span>write</span>
+              </div>
+              <div>
+                <strong>
+                  {io.readOps ?? "—"} / {io.writeOps ?? "—"}
+                </strong>
+                <span>read / write ops</span>
+              </div>
+            </div>
+          ) : (
+            <p className="storage-na">Disk I/O is not available on this host.</p>
+          )}
+        </section>
+      </div>
+
+      {/* Filesystem table */}
+      <section className="storage-panel fade-up d-2">
+        <h2>
+          <Server size={17} />
+          Filesystems <em>{filesystems.length ? `(${filesystems.length})` : ""}</em>
+        </h2>
+
+        {filesystems.length ? (
+          <div className="storage-table">
+            <div className="storage-colhead" aria-hidden="true">
+              <span>Mount</span>
+              <span>Type</span>
+              <span>Total</span>
+              <span>Used</span>
+              <span>Free</span>
+              <span>Usage</span>
+              <span>Status</span>
+            </div>
+            {filesystems.map((fs) => (
+              <div className="storage-row" key={`${fs.filesystem}-${fs.mount}`}>
+                <div className="storage-mount">
+                  <strong title={fs.filesystem}>{fs.mount}</strong>
+                  <span title={fs.filesystem}>{fs.filesystem}</span>
+                </div>
+                <span className="storage-type">{fs.type}</span>
+                <span>{formatBytes(fs.total)}</span>
+                <span>{formatBytes(fs.used)}</span>
+                <span>{formatBytes(fs.free)}</span>
+                <div className="storage-cell-usage">
+                  <div className="usage-track">
+                    <div
+                      className="usage-fill"
+                      style={{
+                        width: `${Math.max(0, Math.min(100, fs.usePercent))}%`,
+                        background: levelColor(fs.level),
+                      }}
+                    />
+                  </div>
+                  <span>{fs.usePercent}%</span>
+                </div>
+                <LevelBadge level={fs.level} />
               </div>
             ))}
           </div>
-        ) : filesystems.length === 0 ? (
-          <div className="empty-state">
+        ) : (
+          <div className="empty-state compact">
             <div className="empty-icon">
               <HardDrive size={24} />
             </div>
             <h3>No filesystems detected</h3>
-            <p>df is unavailable on this host, or every mount is a virtual filesystem.</p>
-          </div>
-        ) : (
-          <div>
-            <div className="st-colhead" aria-hidden="true">
-              <span>Filesystem</span>
-              <span>Mount</span>
-              <span>Type</span>
-              <span>Usage</span>
-              <span>Used / Free</span>
-              <span />
-            </div>
-
-            {filesystems.map((fs) => (
-              <div className="st-fs-row" key={`${fs.filesystem}-${fs.mount}`}>
-                <div className="st-fs-name">
-                  <strong title={fs.filesystem}>{fs.filesystem}</strong>
-                </div>
-                <div className="st-fs-mount" title={fs.mount}>
-                  {fs.mount}
-                </div>
-                <div className="st-fs-type">{fs.type}</div>
-                <div className="st-fs-bar-cell">
-                  <div className="st-bar sm">
-                    <div
-                      className={`st-bar-fill ${String(fs.level).toLowerCase()}`}
-                      style={{ width: `${Math.min(100, fs.usePercent)}%` }}
-                    />
-                  </div>
-                  <span className="st-fs-pct">{fs.usePercent}%</span>
-                </div>
-                <div className="st-fs-amount">
-                  {formatBytes(fs.used)} / {formatBytes(fs.total)}
-                  <span className="st-fs-free">{formatBytes(fs.free)} free</span>
-                </div>
-                <span className={`st-level sm ${String(fs.level).toLowerCase()}`}>
-                  {levelLabel(fs.level)}
-                </span>
-              </div>
-            ))}
+            <p>This host did not report any real filesystems.</p>
           </div>
         )}
       </section>
-
-      {/* Disk I/O */}
-      <section className="st-card fade-up d-4">
-        <div className="st-card-head">
-          <h2>
-            <ArrowDownToLine size={18} />
-            Disk I/O
-          </h2>
-          <span className="st-note">Sampled over a 1s window, cached server-side</span>
-        </div>
-
-        <div className="st-io">
-          <div className="st-io-item">
-            <div className="st-io-icon read">
-              <ArrowDownToLine size={18} />
-            </div>
-            <div>
-              <strong>{formatRate(io?.readBps)}</strong>
-              <span>Read</span>
-            </div>
-          </div>
-          <div className="st-io-item">
-            <div className="st-io-icon write">
-              <ArrowUpFromLine size={18} />
-            </div>
-            <div>
-              <strong>{formatRate(io?.writeBps)}</strong>
-              <span>Write</span>
-            </div>
-          </div>
-          <div className="st-io-item">
-            <div className="st-io-icon ops">
-              <Database size={18} />
-            </div>
-            <div>
-              <strong>
-                {io?.readOps ?? "—"}
-                <em>/</em>
-                {io?.writeOps ?? "—"}
-              </strong>
-              <span>Read / Write ops</span>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
+}
+
+function formatRate(value) {
+  if (value == null || !Number.isFinite(value) || value <= 0) return "—";
+  const mb = value / 1024 / 1024;
+  return `${mb.toFixed(2)} MB/s`;
 }

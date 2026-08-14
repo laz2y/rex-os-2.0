@@ -194,6 +194,7 @@ function summarize(result) {
     "/api/terminal/info",
     "/api/update/status",
     "/api/backups",
+    "/api/docker/stats",
   ];
   for (const path of authPaths) {
     console.log(summarizeAuth(await probeAuth(path)));
@@ -230,6 +231,15 @@ function summarize(result) {
   }
   for (const path of authPaths) {
     console.log(summarizeAuth(await probeAuth(path)));
+  }
+
+  // Bulk container stats + per-container stats/inspect against real containers.
+  try {
+    const bulk = await probeAuth("/api/docker/stats");
+    const count = bulk.body?.stats ? Object.keys(bulk.body.stats).length : 0;
+    console.log(`  /api/docker/stats (bulk) -> HTTP ${bulk.status} (${bulk.ms}ms)  unauth=${bulk.unauthStatus} containersWithStats=${count}`);
+  } catch (error) {
+    console.log(`  /api/docker/stats (bulk) -> ERROR ${error.message}`);
   }
 
   // Docker stats/inspect against the first real container.

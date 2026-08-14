@@ -33,6 +33,11 @@ export async function getContainerStats(id) {
   return data.stats;
 }
 
+export async function getAllContainerStats() {
+  const { data } = await apiClient.get("/docker/stats");
+  return data.stats;
+}
+
 export async function getContainerInspect(id) {
   const { data } = await apiClient.get(`/docker/inspect/${id}`);
   return data.inspect;

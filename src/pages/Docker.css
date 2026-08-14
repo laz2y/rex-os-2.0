@@ -69,7 +69,7 @@
 
 .docker-table-colhead {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 110px auto;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 160px minmax(0, 1fr) auto;
   gap: 16px;
   padding: 0 14px 10px;
   margin-bottom: 8px;
@@ -113,7 +113,7 @@
 
 .docker-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 110px auto;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 160px minmax(0, 1fr) auto;
   gap: 16px;
   align-items: center;
   padding: 16px 14px;
@@ -207,6 +207,73 @@
 .row-action:disabled {
   opacity: 0.4;
   cursor: wait;
+}
+
+.row-action.confirmable.confirming {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  animation: confirm-pulse 1s ease infinite;
+}
+
+@keyframes confirm-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+  }
+}
+
+.docker-row-usage {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.usage-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: Consolas, "JetBrains Mono", monospace;
+  white-space: nowrap;
+}
+
+.usage-line > span {
+  min-width: 38px;
+  text-align: right;
+}
+
+.usage-track {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+  min-width: 30px;
+}
+
+.usage-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+.usage-fill.cpu {
+  background: #60a5fa;
+}
+
+.usage-fill.mem {
+  background: #34d399;
+}
+
+.usage-na {
+  color: var(--text-secondary);
+  opacity: 0.5;
 }
 
 /* ---- Docker Manager 2.0 additions ---- */
@@ -358,9 +425,14 @@
     grid-row: 2;
   }
 
+  .docker-row-usage {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
   .docker-row-actions {
     grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-row: 1 / span 3;
   }
 }
 

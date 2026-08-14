@@ -1,4 +1,5 @@
 const dockerManager = require("../services/dockerManagerService");
+const portainer = require("../services/portainerService");
 const activity = require("../services/activityService");
 
 exports.getDocker = async (req, res) => {
@@ -25,6 +26,20 @@ exports.getDocker = async (req, res) => {
     res.status(500).json({
       status: "error",
       message: "Failed to communicate with Portainer.",
+      details: error.response?.data || error.message,
+    });
+  }
+};
+
+exports.getAllContainerStats = async (req, res) => {
+  try {
+    const stats = await dockerManager.getAllContainerStats();
+    res.json({ status: "success", stats });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({
+      status: "error",
+      message: "Failed to fetch container stats.",
       details: error.response?.data || error.message,
     });
   }

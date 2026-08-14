@@ -17,6 +17,7 @@ import {
   Search,
   Server,
   Settings,
+  SquareTerminal,
   Stethoscope,
   Workflow,
 } from "lucide-react";
@@ -46,6 +47,7 @@ const NAV = [
       { to: "/system", label: "System", icon: Server },
       { to: "/docker", label: "Docker", icon: Boxes },
       { to: "/storage", label: "Storage", icon: HardDrive },
+      { to: "/terminal", label: "Terminal", icon: SquareTerminal },
     ],
   },
   {

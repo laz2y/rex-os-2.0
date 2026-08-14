@@ -3,15 +3,19 @@ import "./Docker.css";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Boxes,
+  Cpu,
   ExternalLink,
+  MemoryStick,
   Play,
   RefreshCw,
   RotateCw,
   Search,
+  ShieldAlert,
   Square,
 } from "lucide-react";
 
 import {
+  getAllContainerStats,
   getContainers,
   restartContainer,
   startContainer,
@@ -81,13 +85,19 @@ export default function DockerPage() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [sort, setSort] = useState("name");
+  const [stats, setStats] = useState(null);
+  const [confirming, setConfirming] = useState(null);
 
   const portainer = services.find((service) => service.id === "docker");
 
   const load = useCallback(async () => {
     try {
-      const result = await getContainers();
+      const [result, statsResult] = await Promise.all([
+        getContainers(),
+        getAllContainerStats().catch(() => null),
+      ]);
       setData(result);
+      setStats(statsResult);
       setError(null);
     } catch (err) {
       console.error("[REX OS] docker load failed:", err);
@@ -104,6 +114,21 @@ export default function DockerPage() {
   }, [load]);
 
   async function runAction(action, container) {
+    // Destructive actions need a second confirming click within 3s.
+    if (
+      action !== "start" &&
+      !(confirming && confirming.id === container.id && confirming.action === action)
+    ) {
+      setConfirming({ id: container.id, action });
+      window.setTimeout(() => {
+        setConfirming((current) =>
+          current && current.id === container.id ? null : current
+        );
+      }, 3000);
+      return;
+    }
+
+    setConfirming(null);
     setBusyId(container.id);
 
     try {
@@ -277,6 +302,7 @@ export default function DockerPage() {
           <div className="docker-table-colhead" aria-hidden="true">
             <span>Container</span>
             <span>State</span>
+            <span>Usage</span>
             <span>Status</span>
             <span />
           </div>
@@ -353,6 +379,14 @@ export default function DockerPage() {
                         <em className={`health ${container.health}`}>{container.health}</em>
                       )}
                       {container.created && <em>created {formatCreated(container.created)}</em>}
+                      {container.ports
+                        ?.filter((port) => port.publicPort)
+                        .slice(0, 3)
+                        .map((port) => (
+                          <em key={`${port.publicPort}-${port.privatePort}`} title="Published port">
+                            {port.publicPort}→{port.privatePort}
+                          </em>
+                        ))}
                     </span>
                   </div>
                 </div>
@@ -364,6 +398,47 @@ export default function DockerPage() {
                 >
                   {container.state}
                 </span>
+
+                <div className="docker-row-usage">
+                  {container.state === "running" && stats?.[container.id] ? (
+                    <>
+                      <div className="usage-line">
+                        <Cpu size={12} />
+                        <div className="usage-track">
+                          <div
+                            className="usage-fill cpu"
+                            style={{
+                              width: `${Math.max(0, Math.min(100, stats[container.id].cpuPercent ?? 0))}%`,
+                            }}
+                          />
+                        </div>
+                        <span>
+                          {stats[container.id].cpuPercent != null
+                            ? `${stats[container.id].cpuPercent}%`
+                            : "—"}
+                        </span>
+                      </div>
+                      <div className="usage-line">
+                        <MemoryStick size={12} />
+                        <div className="usage-track">
+                          <div
+                            className="usage-fill mem"
+                            style={{
+                              width: `${Math.max(0, Math.min(100, stats[container.id].memory?.percent ?? 0))}%`,
+                            }}
+                          />
+                        </div>
+                        <span>
+                          {stats[container.id].memory?.percent != null
+                            ? `${stats[container.id].memory.percent}%`
+                            : "—"}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <span className="usage-na">—</span>
+                  )}
+                </div>
 
                 <div className="docker-row-status">{container.status}</div>
 
@@ -387,25 +462,49 @@ export default function DockerPage() {
                   {container.state === "running" && (
                     <button
                       type="button"
-                      className="row-action"
-                      aria-label={`Stop ${container.name}`}
-                      title="Stop"
+                      className={`row-action confirmable ${
+                        confirming && confirming.id === container.id && confirming.action === "stop"
+                          ? "confirming"
+                          : ""
+                      }`}
+                      aria-label={`${confirming && confirming.id === container.id && confirming.action === "stop" ? "Confirm stop " : "Stop "}${container.name}`}
+                      title={
+                        confirming && confirming.id === container.id && confirming.action === "stop"
+                          ? "Click again to confirm"
+                          : "Stop"
+                      }
                       disabled={busyId === container.id}
                       onClick={() => runAction("stop", container)}
                     >
-                      <Square size={15} />
+                      {confirming && confirming.id === container.id && confirming.action === "stop" ? (
+                        <ShieldAlert size={15} />
+                      ) : (
+                        <Square size={15} />
+                      )}
                     </button>
                   )}
 
                   <button
                     type="button"
-                    className="row-action"
-                    aria-label={`Restart ${container.name}`}
-                    title="Restart"
+                    className={`row-action confirmable ${
+                      confirming && confirming.id === container.id && confirming.action === "restart"
+                        ? "confirming"
+                        : ""
+                    }`}
+                    aria-label={`${confirming && confirming.id === container.id && confirming.action === "restart" ? "Confirm restart " : "Restart "}${container.name}`}
+                    title={
+                      confirming && confirming.id === container.id && confirming.action === "restart"
+                        ? "Click again to confirm"
+                        : "Restart"
+                    }
                     disabled={busyId === container.id}
                     onClick={() => runAction("restart", container)}
                   >
-                    <RotateCw size={15} />
+                    {confirming && confirming.id === container.id && confirming.action === "restart" ? (
+                      <ShieldAlert size={15} />
+                    ) : (
+                      <RotateCw size={15} />
+                    )}
                   </button>
                 </div>
               </div>
