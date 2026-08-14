@@ -51,10 +51,32 @@ async function getLogs(containerId) {
   return response.data;
 }
 
+/** One-shot resource stats snapshot for a container. */
+async function getContainerStats(containerId) {
+  const response = await client.get(
+    `/api/endpoints/${endpointId}/docker/containers/${containerId}/stats`,
+    { params: { stream: false }, timeout: 10000 }
+  );
+
+  return response;
+}
+
+/** Full (raw) container inspect. Callers must curate before responding. */
+async function getContainerInspect(containerId) {
+  const response = await client.get(
+    `/api/endpoints/${endpointId}/docker/containers/${containerId}/json`,
+    { timeout: 10000 }
+  );
+
+  return response;
+}
+
 module.exports = {
   getContainers,
   restartContainer,
   stopContainer,
   startContainer,
   getLogs,
+  getContainerStats,
+  getContainerInspect,
 };

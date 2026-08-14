@@ -87,6 +87,25 @@ function getTemperature() {
   return null;
 }
 
+const systemMonitor = require("../services/systemMonitorService");
+
+/**
+ * GET /api/system/metrics — full real-time monitoring payload (auth required).
+ * Backward-compatible with /api/system; the richer source for the System page.
+ */
+exports.getSystemMetrics = async (req, res) => {
+  try {
+    const metrics = await systemMonitor.getSystemMetrics();
+    res.json(metrics);
+  } catch (error) {
+    console.error("[system/metrics] error:", error.message);
+    res.status(500).json({
+      status: "error",
+      message: "Failed to collect system metrics.",
+    });
+  }
+};
+
 exports.getSystem = async (req, res) => {
   const network = await getNetworkThroughput();
 

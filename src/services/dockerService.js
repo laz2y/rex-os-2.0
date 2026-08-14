@@ -27,3 +27,13 @@ export async function getContainerLogs(id) {
 
   return response.data;
 }
+
+export async function getContainerStats(id) {
+  const { data } = await apiClient.get(`/docker/stats/${id}`);
+  return data.stats;
+}
+
+export async function getContainerInspect(id) {
+  const { data } = await apiClient.get(`/docker/inspect/${id}`);
+  return data.inspect;
+}

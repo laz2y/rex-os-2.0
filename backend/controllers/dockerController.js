@@ -1,29 +1,23 @@
-const portainer = require("../services/portainerService");
+const dockerManager = require("../services/dockerManagerService");
 const activity = require("../services/activityService");
 
 exports.getDocker = async (req, res) => {
   try {
-    const containers = await portainer.getContainers();
+    const containers = await dockerManager.getContainers();
 
     const running = containers.filter(
-      (container) => container.State === "running"
+      (container) => container.state === "running"
     ).length;
 
-    const stopped = containers.filter(
-      (container) => container.State !== "running"
-    ).length;
+    const stopped = containers.length - running;
 
+    // Additive: legacy fields (id/name/image/state/status) preserved, plus
+    // shortId, health, created, ports for Docker Manager 2.0.
     res.json({
       status: "success",
       running,
       stopped,
-      containers: containers.map((container) => ({
-        id: container.Id,
-        name: container.Names[0].replace("/", ""),
-        image: container.Image,
-        state: container.State,
-        status: container.Status,
-      })),
+      containers,
     });
   } catch (error) {
     console.error(error.response?.data || error.message);
@@ -31,6 +25,34 @@ exports.getDocker = async (req, res) => {
     res.status(500).json({
       status: "error",
       message: "Failed to communicate with Portainer.",
+      details: error.response?.data || error.message,
+    });
+  }
+};
+
+exports.getContainerStats = async (req, res) => {
+  try {
+    const stats = await dockerManager.getContainerStats(req.params.id);
+    res.json({ status: "success", id: req.params.id, stats });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({
+      status: "error",
+      message: "Failed to fetch container stats.",
+      details: error.response?.data || error.message,
+    });
+  }
+};
+
+exports.getContainerInspect = async (req, res) => {
+  try {
+    const inspect = await dockerManager.getContainerInspect(req.params.id);
+    res.json({ status: "success", id: req.params.id, inspect });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({
+      status: "error",
+      message: "Failed to inspect container.",
       details: error.response?.data || error.message,
     });
   }

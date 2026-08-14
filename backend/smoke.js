@@ -17,10 +17,27 @@ const server = require("./server.js"); // starts listening on :PORT
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function probe(path) {
+// The smoke test cannot know the plaintext password (only the bcrypt hash is
+// stored), so it signs a short-lived JWT directly with the server-side secret
+// to exercise session-authenticated endpoints end-to-end.
+const jwt = require("jsonwebtoken");
+const authCookie =
+  process.env.JWT_SECRET && process.env.REX_USERNAME
+    ? `rexos_token=${jwt.sign(
+        { user: process.env.REX_USERNAME },
+        process.env.JWT_SECRET,
+        { expiresIn: "10m" }
+      )}`
+    : null;
+
+async function probe(path, options = {}) {
   try {
     const started = Date.now();
-    const res = await fetch(`http://localhost:${process.env.PORT}${path}`);
+    const res = await fetch(`http://localhost:${process.env.PORT}${path}`, {
+      headers: options.headers || {},
+      method: options.method || "GET",
+      body: options.body,
+    });
     const text = await res.text();
     let body = text;
     try {
@@ -32,6 +49,36 @@ async function probe(path) {
   } catch (error) {
     return { path, status: "ERR", ms: 0, error: error.message };
   }
+}
+
+async function probeAuth(path) {
+  // Same path with and without the session cookie.
+  const unauth = await probe(path);
+  const auth = await probe(path, {
+    headers: authCookie ? { Cookie: authCookie } : {},
+  });
+  return {
+    path,
+    unauthStatus: unauth.status,
+    status: auth.status,
+    ms: auth.ms,
+    body: auth.body,
+  };
+}
+
+function summarizeAuth(result) {
+  const b = result.body;
+  let info = "";
+  if (b && typeof b === "object") {
+    if (b.generatedAt) info = `unauth=${result.unauthStatus} auth=${result.status} cpu=${b.cpu} ram=${b.ram} memGB=${((b.memory?.total || 0) / 1073741824).toFixed(1)} swap=${b.swap ? b.swap.percent + "%" : "n/a"} net=${b.network?.download ?? "n/a"}/${b.network?.upload ?? "n/a"} MB/s io=${b.diskIo ? b.diskIo.readBps + "/" + b.diskIo.writeBps : "n/a"} procs=${b.processes ? b.processes.length : "n/a"} docker=${b.docker ? b.docker.running + "/" + b.docker.total : "n/a"}`;
+    else if (b.filesystems) info = `unauth=${result.unauthStatus} auth=${result.status} fs=${b.filesystems.length} root=${b.root?.usedPercent}% level=${b.root?.level} warnings=${b.warnings.length} io=${b.io ? b.io.readBps + "/" + b.io.writeBps : "n/a"}`;
+    else if (b.stats) info = `unauth=${result.unauthStatus} auth=${result.status} cpu=${b.stats.cpuPercent}% mem=${b.stats.memory?.percent}% net=${JSON.stringify(b.stats.network)} pids=${b.stats.pids}`;
+    else if (b.inspect) info = `unauth=${result.unauthStatus} auth=${result.status} name=${b.inspect.name} state=${b.inspect.state?.status} restarts=${b.inspect.restartCount} policy=${b.inspect.restartPolicy} mounts=${b.inspect.mounts?.length} envExposed=${b.inspect.env ? "YES" : "no"}`;
+    else if (b.session) info = `unauth=${result.unauthStatus} auth=${result.status} id=${b.session.id?.slice(0, 8)} shell=${b.session.shell} pty=${b.session.pty}`;
+    else if (b.activeSessions != null) info = `unauth=${result.unauthStatus} auth=${result.status} shell=${b.shell} pty=${b.ptySupported} active=${b.activeSessions}`;
+    else info = `unauth=${result.unauthStatus} auth=${result.status}`;
+  }
+  return `  ${result.path} -> HTTP ${result.status} (${result.ms}ms)  ${info}`;
 }
 
 function summarize(result) {
@@ -133,6 +180,76 @@ function summarize(result) {
   }
 
   results.forEach((result) => console.log(summarize(result)));
+
+  // ---- Phase 2: session-authenticated endpoints ----
+  console.log("\nPhase 2 — auth-protected endpoints (unauth must be 401):");
+
+  const authPaths = [
+    "/api/system/metrics",
+    "/api/storage",
+    "/api/terminal/info",
+  ];
+  for (const path of authPaths) {
+    console.log(summarizeAuth(await probeAuth(path)));
+  }
+
+  // Docker stats/inspect against the first real container.
+  try {
+    const docker = await probe("/api/docker");
+    const first = docker.body?.containers?.[0];
+    if (first) {
+      console.log(summarizeAuth(await probeAuth(`/api/docker/stats/${first.id}`)));
+      console.log(summarizeAuth(await probeAuth(`/api/docker/inspect/${first.id}`)));
+    } else {
+      console.log("  (no containers found — skipping docker stats/inspect)");
+    }
+  } catch (error) {
+    console.log(`  docker stats/inspect -> ERROR ${error.message}`);
+  }
+
+  // Terminal end-to-end: create -> input -> output -> interrupt -> close.
+  if (authCookie) {
+    try {
+      const created = await probe("/api/terminal/session", {
+        method: "POST",
+        headers: { Cookie: authCookie },
+      });
+      console.log(summarizeAuth({ path: "/api/terminal/session", status: created.status, ms: created.ms, body: created.body, unauthStatus: "n/a" }));
+
+      const sessionId = created.body?.session?.id;
+      if (sessionId) {
+        await probe(`/api/terminal/session/${sessionId}/input`, {
+          method: "POST",
+          headers: { Cookie: authCookie, "Content-Type": "application/json" },
+          body: JSON.stringify({ input: "echo rex-phase2-terminal-ok\r" }),
+        });
+        await sleep(1200);
+        const output = await probe(`/api/terminal/session/${sessionId}/output`, {
+          headers: { Cookie: authCookie },
+        });
+        console.log(
+          `  /api/terminal/session/:id/output -> HTTP ${output.status}  output="${String(
+            output.body?.output || ""
+          ).slice(0, 80)}" exited=${output.body?.exited}`
+        );
+        const interrupted = await probe(`/api/terminal/session/${sessionId}/interrupt`, {
+          method: "POST",
+          headers: { Cookie: authCookie },
+        });
+        console.log(`  /api/terminal/session/:id/interrupt -> HTTP ${interrupted.status}  ${JSON.stringify(interrupted.body)}`);
+        const closed = await probe(`/api/terminal/session/${sessionId}`, {
+          method: "DELETE",
+          headers: { Cookie: authCookie },
+        });
+        console.log(`  DELETE /api/terminal/session/:id -> HTTP ${closed.status}  ${JSON.stringify(closed.body)}`);
+      }
+    } catch (error) {
+      console.log(`  terminal flow -> ERROR ${error.message}`);
+    }
+  } else {
+    console.log("  (no JWT_SECRET — skipping authenticated terminal flow)");
+  }
+
   console.log("Smoke test complete.");
   process.exit(0);
 })();
