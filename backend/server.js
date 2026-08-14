@@ -171,6 +171,27 @@ app.get("/api/download/rexos-2.2-release.tar.gz", (req, res) => {
   res.sendFile(REX22_RELEASE_ARCHIVE);
 });
 
+// ⚠️ TEMPORARY — dev-release download route for REX OS 2.4.0. REMOVE AFTER
+// DOWNLOAD. Serves ONLY the verified rexos-2.4.0-release.tar.gz so the
+// developer can pull it out of the workspace for manual upload. No directory
+// listing, no other files, clean 404 when missing. Do NOT ship in a release.
+const REX240_RELEASE_ARCHIVE = path.join(
+  __dirname,
+  "..",
+  "rexos-2.4.0-release.tar.gz"
+);
+app.get("/api/download/rexos-2.4.0-release.tar.gz", (req, res) => {
+  if (!fs.existsSync(REX240_RELEASE_ARCHIVE)) {
+    return res.status(404).json({ error: "Release archive not found" });
+  }
+  res.setHeader("Content-Type", "application/gzip");
+  res.setHeader(
+    "Content-Disposition",
+    'attachment; filename="rexos-2.4.0-release.tar.gz"'
+  );
+  res.sendFile(REX240_RELEASE_ARCHIVE);
+});
+
 // Start the auto-recovery monitor (probes + controlled restarts + alerts).
 // Guarded so `node smoke.js` / test harnesses can require this module
 // without spawning background timers.
