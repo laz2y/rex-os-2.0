@@ -157,10 +157,29 @@ inside rex-backend and Direct Link Add errors out (the API returns a clear
 
 The permanent fix is a **compose-file change** (survives reboot, `docker
 compose up`, Watchtower recreation and REX Updater rollback — `docker network
-connect` alone does NOT, it is lost on container recreation):
+connect` alone does NOT, it is lost on container recreation). The change is
+exactly two things: `pyload` declares **both** networks, and the shared
+`rex-net` is declared as an external network. Everything else about pyLoad is
+untouched.
+
+**Option A — drop-in override (recommended).** The repository ships the
+exact fragment at `deploy/pyload-rex-net.override.yml`. Copy it next to the
+NAS stack's base compose as the auto-loaded override file, then recreate
+pyload:
+
+```bash
+cd <stack-dir-on-nas>
+cp docker-compose.yml docker-compose.yml.bak-$(date +%F)   # back up first
+cp /path/to/rexos/deploy/pyload-rex-net.override.yml docker-compose.override.yml
+# if docker-compose.override.yml already exists, merge the two blocks into it
+# instead of overwriting it
+docker compose up -d pyload          # recreates pyload with both networks
+```
+
+**Option B — merge inline into the base compose** (same result, no extra
+file):
 
 ```yaml
-# On the NAS, in the stack's docker-compose.yml — pyload service:
 services:
   pyload:
     # ...existing config...
@@ -175,12 +194,13 @@ networks:
     external: true
 ```
 
-Apply (back up first):
+Then ensure the backend points at the Docker service name:
 
 ```bash
-cd <stack-dir-on-nas>
-cp docker-compose.yml docker-compose.yml.bak-$(date +%F)
-docker compose up -d pyload          # recreates pyload with both networks
+docker inspect rex-backend --format '{{range .Config.Env}}{{println .}}{{end}}' | grep PYLOAD_URL
+# must read:  PYLOAD_URL=http://pyload:8000
+# if it points elsewhere, update the rex-backend env and recreate it through
+# the normal REX Updater update path so the env applies
 ```
 
 Verify from inside rex-backend (no IPs anywhere):
@@ -193,10 +213,10 @@ docker exec rex-backend wget -qO- --timeout=10 http://pyload:8000/api/info
 # → should return pyLoad's JSON API info instead of "bad address"
 ```
 
-Then set `PYLOAD_URL=http://pyload:8000` in the rex-backend container env
-(if it is not already) and recreate/restart rex-backend so the env applies.
-`rexos` stays intact, so pyLoad's existing connectivity to the rest of the
-arr stack is unaffected.
+Finally test Direct Link Add in REX OS with a real direct-download URL, and
+confirm a manual add through pyLoad's own UI still works. `rexos` stays
+intact, so pyLoad's existing connectivity to the rest of the arr stack is
+unaffected.
 
 ## 5. State, backups, updates and rollback
 

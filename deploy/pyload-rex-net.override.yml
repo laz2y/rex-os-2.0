@@ -1,0 +1,50 @@
+# pyload → rex-net network override (REX OS permanent fix)
+# =========================================================
+# Problem: rex-backend runs on `rex-net`; pyload only on `rexos`. Docker's
+# embedded DNS only resolves a service name from containers sharing a
+# network, so inside rex-backend `getent hosts pyload` fails and
+# http://pyload:8000 is unreachable ("bad address") — Direct Link Add fails.
+#
+# Fix: attach pyload to BOTH networks. pyload keeps `rexos` (existing
+# connectivity to the arr stack is untouched) and additionally joins
+# `rex-net` so rex-backend resolves `pyload` by Docker service name — no IPs.
+#
+# This is declared in Compose config (not `docker network connect`), so it
+# survives reboot, `docker compose up`/recreate, Watchtower updates and REX
+# Updater update/rollback operations. The REX Updater itself is NOT touched.
+#
+# Usage — drop-in override (auto-loaded by `docker compose`):
+#   cp deploy/pyload-rex-net.override.yml <stack-dir>/docker-compose.override.yml
+#   cd <stack-dir>
+#   docker compose up -d pyload
+#
+# If <stack-dir>/docker-compose.override.yml already exists, MERGE the two
+# blocks below into it instead of overwriting it.
+#
+# Alternative — merge inline into the base compose (same effect):
+#   services.pyload.networks: add `- rex-net`
+#   top-level networks: add `rex-net: { external: true }` (if not declared)
+#
+# Verify after applying (from the NAS):
+#   docker exec rex-backend getent hosts pyload
+#   docker exec rex-backend wget -qO- --timeout=10 http://pyload:8000/api/info
+#
+# NOTE: the override must be applied and verified ON THE NAS. The REX OS
+# repository only ships this configuration; it cannot apply it for you.
+
+services:
+  pyload:
+    # Only `networks` is overridden here — image, ports, env, volumes,
+    # healthcheck and every other pyLoad setting come from the base compose
+    # untouched. Listing both networks makes the result identical whether
+    # Compose merges or replaces the service network list.
+    networks:
+      - rexos        # existing network — kept, do not remove
+      - rex-net      # NEW — lets rex-backend resolve 'pyload' via Docker DNS
+
+networks:
+  # `rex-net` is created/managed elsewhere (rex-backend's stack) — reference
+  # it as external. `rexos` is intentionally NOT redeclared here so this
+  # override cannot conflict with however the base compose defines it.
+  rex-net:
+    external: true
