@@ -1,7 +1,7 @@
 {
   "product": "REX OS",
   "version": "2.5.0",
-  "minimumVersion": "2.2.0",
+  "minimumVersion": "2.4.0",
   "releaseType": "stable",
   "releaseDate": "2026-08-15",
   "image": "rex-backend:rexos-2.5"
