@@ -1,6 +1,6 @@
 import "./JellyfinWidget.css";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
   AlertTriangle,
   Clapperboard,
@@ -21,7 +21,7 @@ function PosterSkeleton() {
   return <div className="skeleton poster-sk" />;
 }
 
-export default function JellyfinWidget() {
+function JellyfinWidget() {
   const [server, setServer] = useState(null);
   const [latest, setLatest] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -173,3 +173,5 @@ export default function JellyfinWidget() {
     </section>
   );
 }
+
+export default memo(JellyfinWidget);

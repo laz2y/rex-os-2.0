@@ -1,6 +1,6 @@
 import "./Notifications.css";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { RefreshCw, Tv } from "lucide-react";
 
 import { getSessions, mediaUrl } from "../../../services/jellyfinService";
@@ -17,7 +17,7 @@ function RowSkeleton() {
   );
 }
 
-export default function Notifications() {
+function Notifications() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -44,11 +44,21 @@ export default function Notifications() {
 
     load();
 
-    const interval = setInterval(load, 30000);
+    // Refresh while the tab is visible; skip ticks when hidden so the NAS
+    // isn't polled in the background.
+    const interval = setInterval(() => {
+      if (!document.hidden) load();
+    }, 30000);
+
+    function onVisible() {
+      if (!document.hidden) load();
+    }
+    document.addEventListener("visibilitychange", onVisible);
 
     return () => {
       active = false;
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
@@ -104,3 +114,5 @@ export default function Notifications() {
     </section>
   );
 }
+
+export default memo(Notifications);

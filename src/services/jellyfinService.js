@@ -8,9 +8,27 @@ export function mediaUrl(path) {
   return `${API_ORIGIN}${path}`;
 }
 
+// Server identity (name/version) is effectively static, but several Home
+// widgets fetch it independently on mount (JellyfinWidget + FooterStatus).
+// A short-TTL in-memory cache coalesces those into one request per minute
+// instead of two per page load.
+let serverInfoPromise = null;
+let serverInfoAt = 0;
+const SERVER_INFO_TTL_MS = 60000;
+
 export async function getJellyfinServer() {
-  const { data } = await apiClient.get("/jellyfin");
-  return data;
+  const now = Date.now();
+  if (serverInfoPromise && now - serverInfoAt < SERVER_INFO_TTL_MS) {
+    return serverInfoPromise;
+  }
+  serverInfoAt = now;
+  serverInfoPromise = apiClient.get("/jellyfin").then(({ data }) => data);
+  try {
+    return await serverInfoPromise;
+  } catch (error) {
+    serverInfoPromise = null;
+    throw error;
+  }
 }
 
 export async function getLatestMedia() {

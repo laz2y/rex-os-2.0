@@ -1,11 +1,11 @@
 import "./ContinueWatching.css";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Bookmark } from "lucide-react";
 
 import { getResumeMedia, mediaUrl } from "../../../services/jellyfinService";
 
-export default function ContinueWatching() {
+function ContinueWatching() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -65,3 +65,5 @@ export default function ContinueWatching() {
     </section>
   );
 }
+
+export default memo(ContinueWatching);

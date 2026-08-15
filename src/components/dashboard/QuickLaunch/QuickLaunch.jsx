@@ -1,11 +1,11 @@
 import "./QuickLaunch.css";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { services } from "../../../data/services";
 
 const DRAG_THRESHOLD = 6; // px of movement before a pointer press counts as a drag
 
-export default function QuickLaunch() {
+function QuickLaunch() {
   const trackRef = useRef(null);
   const drag = useRef({ active: false, startX: 0, startScroll: 0, moved: false });
   const [dragging, setDragging] = useState(false);
@@ -218,3 +218,5 @@ export default function QuickLaunch() {
     </section>
   );
 }
+
+export default memo(QuickLaunch);

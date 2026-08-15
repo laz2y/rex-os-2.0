@@ -1,6 +1,6 @@
 import "./HomeHero.css";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 
 import { config } from "../../../data/config";
 import { setSlotArtwork } from "../../../core/themes/artwork";
@@ -11,7 +11,7 @@ import { setSlotArtwork } from "../../../core/themes/artwork";
  * darkened for readability); when no banner image has been uploaded it falls
  * back to the active theme's artwork so the hero always follows the theme.
  */
-export default function HomeHero() {
+function HomeHero() {
   // Fades in the dedicated banner artwork once it resolves (avoids a flash
   // of the theme fallback when a banner upload exists).
   const [hasBanner, setHasBanner] = useState(false);
@@ -50,3 +50,5 @@ export default function HomeHero() {
     </section>
   );
 }
+
+export default memo(HomeHero);
