@@ -8,6 +8,7 @@ import {
   Clapperboard,
   Cloud,
   Download,
+  ExternalLink,
   HardDrive,
   Home,
   LifeBuoy,
@@ -63,7 +64,14 @@ const NAV = [
     caption: "System",
     items: [
       { to: "/settings", label: "Settings", icon: Settings },
-      { to: "/updates", label: "Updates", icon: PackageCheck },
+      {
+        // Updates live in the separate REX Updater service — REX OS opens it
+        // in a new tab instead of duplicating updater functionality.
+        href: config.updaterUrl,
+        label: "Updates",
+        icon: PackageCheck,
+        external: true,
+      },
       { to: "/backups", label: "Backups", icon: Archive },
       { to: "/recovery", label: "Recovery", icon: LifeBuoy },
     ],
@@ -104,21 +112,38 @@ export default function Sidebar({ open, onClose }) {
             <div key={group.caption}>
               <p className="nav-caption">{group.caption}</p>
 
-              {group.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  className={({ isActive }) =>
-                    isActive ? "nav-item active" : "nav-item"
-                  }
-                  onClick={onClose}
-                >
-                  <item.icon size={20} />
-                  <span>{item.label}</span>
-                  <ChevronRight size={18} className="nav-arrow" />
-                </NavLink>
-              ))}
+              {group.items.map((item) =>
+                item.external ? (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="nav-item"
+                    onClick={onClose}
+                    title="Opens the REX Updater in a new tab"
+                    aria-label={`${item.label} — opens the REX Updater in a new tab`}
+                  >
+                    <item.icon size={20} />
+                    <span>{item.label}</span>
+                    <ExternalLink size={14} className="nav-ext" />
+                  </a>
+                ) : (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    className={({ isActive }) =>
+                      isActive ? "nav-item active" : "nav-item"
+                    }
+                    onClick={onClose}
+                  >
+                    <item.icon size={20} />
+                    <span>{item.label}</span>
+                    <ChevronRight size={18} className="nav-arrow" />
+                  </NavLink>
+                ),
+              )}
             </div>
           ))}
         </nav>

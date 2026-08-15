@@ -18,7 +18,7 @@ import { config } from "../data/config";
 
 export default function Home() {
   const { loading, system, docker, error, retry, online } = useDashboard();
-  const { date, hour } = useLiveClock();
+  const { date, hour } = useLiveClock({ seconds: false });
 
   const apiDown = error && !system && !docker;
 

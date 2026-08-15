@@ -1,13 +1,7 @@
 import "./Header.css";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Bell,
-  CalendarDays,
-  Clock3,
-  Menu,
-  Search,
-} from "lucide-react";
+import { Bell, CalendarDays, Clock3, Menu } from "lucide-react";
 
 import useLiveClock from "../../../hooks/useLiveClock";
 import { config } from "../../../data/config";
@@ -16,7 +10,6 @@ import { getNotifications } from "../../../api/notifications";
 export default function Header({ onMenu }) {
   const { time, date } = useLiveClock();
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
   const [unread, setUnread] = useState(0);
 
   // Keep the bell badge in sync with the server-side unread count.
@@ -42,15 +35,6 @@ export default function Header({ onMenu }) {
       clearInterval(timer);
     };
   }, []);
-
-  function handleSearch(event) {
-    event.preventDefault();
-
-    const term = query.trim();
-
-    navigate(term ? `/search?q=${encodeURIComponent(term)}` : "/search");
-    setQuery("");
-  }
 
   return (
     <header className="header">
@@ -81,16 +65,6 @@ export default function Header({ onMenu }) {
           <Clock3 size={16} />
           {time}
         </div>
-
-        <form className="search-box" onSubmit={handleSearch}>
-          <Search size={18} />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search the NAS…"
-            aria-label="Search the NAS"
-          />
-        </form>
 
         <button
           type="button"

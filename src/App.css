@@ -186,6 +186,11 @@
   margin-left: auto;
 }
 
+.nav-ext {
+  margin-left: auto;
+  opacity: 0.75;
+}
+
 .nav-caption {
   margin: 16px 8px 6px;
   font-size: 10px;
@@ -506,6 +511,7 @@
   .logo span,
   .nav-item span:not(.nav-caption),
   .nav-arrow,
+  .nav-ext,
   .sidebar-bottom > div:nth-child(2),
   .theme-dots {
     display: none;

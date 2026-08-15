@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
+  ExternalLink,
   FileArchive,
   Loader2,
   PackageCheck,
@@ -23,6 +24,7 @@ import {
   rollbackUpdate,
 } from "../services/updateService";
 import { success as toastSuccess, error as toastError } from "../services/toastService";
+import { config } from "../data/config";
 
 const STATE_META = {
   idle: { label: "Idle", cls: "idle" },
@@ -158,6 +160,21 @@ export default function Updates() {
       <div className="page-head fade-up">
         <h1>Updates</h1>
         <p>Safe REX OS upgrades — validate, rollback point, install, history</p>
+      </div>
+
+      {/* REX Updater is the separate service that actually swaps the REX
+          container — REX OS itself only stages and validates releases. */}
+      <div className="up-external fade-up d-1">
+        <ExternalLink size={16} />
+        <p>
+          <strong>Production upgrades run through the separate REX Updater.</strong>{" "}
+          Open it in a new tab to install releases and manage rollbacks on the
+          NAS — this page only validates and stages packages for review.
+        </p>
+        <a href={config.updaterUrl} target="_blank" rel="noreferrer">
+          Open REX Updater
+          <ExternalLink size={13} />
+        </a>
       </div>
 
       {/* Current state */}

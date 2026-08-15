@@ -156,8 +156,6 @@ function summarize(result) {
     "/api/auth/me",
     "/api/radarr/overview",
     "/api/sonarr/overview",
-    "/api/search?q=test",
-    "/api/search?q=",
   ];
 
   // Auth login probe (wrong password must be rejected — 401).

@@ -109,8 +109,23 @@ export default function DockerPage() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 15000);
-    return () => clearInterval(interval);
+
+    // Poll while the tab is visible; skip ticks (and refresh immediately on
+    // return) when hidden — the bulk stats call is the most expensive one
+    // REX makes, so it must not run in the background.
+    const interval = setInterval(() => {
+      if (!document.hidden) load();
+    }, 15000);
+
+    function onVisible() {
+      if (!document.hidden) load();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [load]);
 
   async function runAction(action, container) {

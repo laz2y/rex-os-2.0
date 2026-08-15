@@ -72,7 +72,6 @@ const activityRoute = require("./routes/activity");
 const notificationsRoute = require("./routes/notifications");
 const diagnosticsRoute = require("./routes/diagnostics");
 const storageRoute = require("./routes/storage");
-const searchRoute = require("./routes/search");
 const radarrRoute = require("./routes/radarr");
 const sonarrRoute = require("./routes/sonarr");
 const updateRoute = require("./routes/update");
@@ -117,7 +116,7 @@ if (fs.existsSync(distDir)) {
 app.get("/", (req, res) => {
   res.json({
     app: "REX API",
-    version: "2.4.0",
+    version: "2.5.0",
     status: "online",
   });
 });
@@ -125,7 +124,7 @@ app.get("/", (req, res) => {
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
-    version: "2.4.0",
+    version: "2.5.0",
     uptime: process.uptime(),
   });
 });
@@ -143,54 +142,10 @@ app.use("/api/activity", activityRoute);
 app.use("/api/notifications", notificationsRoute);
 app.use("/api/diagnostics", diagnosticsRoute);
 app.use("/api/storage", storageRoute);
-app.use("/api/search", searchRoute);
 app.use("/api/radarr", radarrRoute);
 app.use("/api/sonarr", sonarrRoute);
 app.use("/api/update", updateRoute);
 app.use("/api/backups", backupsRoute);
-
-// ⚠️ TEMPORARY — dev-release download route. REMOVE AFTER DOWNLOAD.
-// Serves ONLY the verified rexos-2.2-release.tar.gz archive so the
-// developer can pull it out of the workspace for manual upload. No
-// directory listing, no other files, clean 404 when missing. Do NOT
-// ship this route in a release — delete it once the download is done.
-const REX22_RELEASE_ARCHIVE = path.join(
-  __dirname,
-  "..",
-  "rexos-2.2-release.tar.gz"
-);
-app.get("/api/download/rexos-2.2-release.tar.gz", (req, res) => {
-  if (!fs.existsSync(REX22_RELEASE_ARCHIVE)) {
-    return res.status(404).json({ error: "Release archive not found" });
-  }
-  res.setHeader("Content-Type", "application/gzip");
-  res.setHeader(
-    "Content-Disposition",
-    'attachment; filename="rexos-2.2-release.tar.gz"'
-  );
-  res.sendFile(REX22_RELEASE_ARCHIVE);
-});
-
-// ⚠️ TEMPORARY — dev-release download route for REX OS 2.4.0. REMOVE AFTER
-// DOWNLOAD. Serves ONLY the verified rexos-2.4.0-release.tar.gz so the
-// developer can pull it out of the workspace for manual upload. No directory
-// listing, no other files, clean 404 when missing. Do NOT ship in a release.
-const REX240_RELEASE_ARCHIVE = path.join(
-  __dirname,
-  "..",
-  "rexos-2.4.0-release.tar.gz"
-);
-app.get("/api/download/rexos-2.4.0-release.tar.gz", (req, res) => {
-  if (!fs.existsSync(REX240_RELEASE_ARCHIVE)) {
-    return res.status(404).json({ error: "Release archive not found" });
-  }
-  res.setHeader("Content-Type", "application/gzip");
-  res.setHeader(
-    "Content-Disposition",
-    'attachment; filename="rexos-2.4.0-release.tar.gz"'
-  );
-  res.sendFile(REX240_RELEASE_ARCHIVE);
-});
 
 // Start the auto-recovery monitor (probes + controlled restarts + alerts).
 // Guarded so `node smoke.js` / test harnesses can require this module

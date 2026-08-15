@@ -36,7 +36,7 @@ const notification = require("./notificationService");
  *     validated values (version strings, fixed file names).
  */
 
-const APP_VERSION = process.env.REX_APP_VERSION || "2.4.0";
+const APP_VERSION = process.env.REX_APP_VERSION || "2.5.0";
 
 const STATE_FILE = "update";
 const HISTORY_FILE = "update-history";

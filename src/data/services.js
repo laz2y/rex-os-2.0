@@ -1,14 +1,14 @@
 import {
+  Boxes,
+  Camera,
   Clapperboard,
   Cloud,
-  Camera,
-  Boxes,
   Download,
+  Film,
+  Rss,
+  Sailboat,
   Shield,
   Tv,
-  Film,
-  Search,
-  Sailboat,
   Zap,
 } from "lucide-react";
 
@@ -97,7 +97,7 @@ export const services = [
     id: "prowlarr",
     name: "Prowlarr",
     description: "Indexers",
-    icon: Search,
+    icon: Rss,
     color: "#06b6d4",
     url: "https://prowlarr.laz2ynas.cc",
     category: "downloads",

@@ -178,7 +178,7 @@ independent, so rollback is instant and lossless.
 ## 7. Verification checklist (after starting 3.0)
 
 ```
-curl http://localhost:4000/api/health        # → 200 {"status":"ok","version":"2.4.0",...}
+curl http://localhost:4000/api/health        # → 200 {"status":"ok","version":"2.5.0",...}
 curl http://localhost:4000/                  # → the REX OS UI (index.html)
 curl http://localhost:4000/api/auth/me       # → 401 when logged out
 curl http://localhost:4000/assets/goku.png   # → 200 (each of the 6 assets)

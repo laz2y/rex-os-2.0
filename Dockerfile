@@ -1,7 +1,7 @@
-# REX OS 2.4 — runtime image
+# REX OS 2.5 — runtime image
 # Build context: the extracted release root, which contains:
 #   manifest.json  Dockerfile  backend/  dist/  DEPLOY.md
-# Build: docker build -t rex-backend:rexos-2.4 .
+# Build: docker build -t rex-backend:rexos-2.5 .
 # Run:   the container is created by REX Updater reusing the previous
 #        rex-backend container's env/ports/restart policy (see
 #        rex-updater/DESIGN.md). Env vars stay in the container config,

@@ -89,7 +89,16 @@ export default function StoragePage() {
     pollTimer.current = setInterval(() => {
       if (!document.hidden) load();
     }, POLL_MS);
-    return () => clearInterval(pollTimer.current);
+
+    function onVisible() {
+      if (!document.hidden) load();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      clearInterval(pollTimer.current);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [load]);
 
   if (loading && !data) {

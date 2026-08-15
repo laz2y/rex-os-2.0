@@ -33,9 +33,22 @@ export default function useDashboard() {
   useEffect(() => {
     load();
 
-    const interval = setInterval(load, 10000);
+    // Poll while the tab is visible; skip ticks (and refresh immediately on
+    // return) when the tab is hidden so the NAS is not hammered in the
+    // background.
+    const interval = setInterval(() => {
+      if (!document.hidden) load();
+    }, 10000);
 
-    return () => clearInterval(interval);
+    function onVisible() {
+      if (!document.hidden) load();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [load]);
 
   return {
