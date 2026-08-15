@@ -22,6 +22,11 @@ function statusOf(error) {
   if (http === 401 || http === 403) {
     return { status: "auth_failed", detail: "Authentication failed" };
   }
+  // Transport-level failures: DNS is the classic "container name does not
+  // resolve" case (service not attached to the same Docker network).
+  if (error.code === "ENOTFOUND" || error.code === "EAI_AGAIN") {
+    return { status: "offline", detail: "Hostname did not resolve — Docker network?" };
+  }
   if (error.code === "ECONNABORTED" || !error.response) {
     return { status: "offline", detail: "Unreachable" };
   }

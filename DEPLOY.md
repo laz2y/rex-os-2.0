@@ -122,7 +122,7 @@ All server-side, all in `backend/.env` (or exported in the process env).
 | `QBITTORRENT_URL` | e.g. `https://qb.laz2ynas.cc` |
 | `QBITTORRENT_USERNAME` | qBittorrent user |
 | `QBITTORRENT_PASSWORD` | qBittorrent app password |
-| `PYLOAD_URL` | pyLoad web/API base, e.g. `https://pyload.laz2ynas.cc` |
+| `PYLOAD_URL` | pyLoad web/API base. Container deployment (recommended): `http://pyload:8000` (Docker service name — see §4a below). Non-Docker / reverse-proxy: e.g. `https://pyload.laz2ynas.cc` |
 | `PYLOAD_USERNAME` | pyLoad login user |
 | `PYLOAD_PASSWORD` | pyLoad login password |
 | `RADARR_URL` | Radarr base, e.g. `https://radarr.laz2ynas.cc` |
@@ -144,6 +144,59 @@ Optional tunables (all have safe defaults):
 
 Optional override file: `backend/.auth-secrets.json` — fill-gap values
 for the same keys, plus `REX_PASSWORD_HASH` which always overrides.
+
+### 4a. Docker networking — pyLoad ↔ rex-backend (permanent fix)
+
+When `rex-backend` runs as a container (the REX Updater deployment), it must
+reach pyLoad **by Docker service name** (`http://pyload:8000`), never by IP
+address. Docker's embedded DNS only resolves names of containers attached to
+the **same** network as the caller. The classic failure: `rex-backend` is on
+`rex-net` while `pyload` is only on `rexos`, so `getent hosts pyload` fails
+inside rex-backend and Direct Link Add errors out (the API returns a clear
+"hostname did not resolve — Docker network?" message in REX OS 2.5+).
+
+The permanent fix is a **compose-file change** (survives reboot, `docker
+compose up`, Watchtower recreation and REX Updater rollback — `docker network
+connect` alone does NOT, it is lost on container recreation):
+
+```yaml
+# On the NAS, in the stack's docker-compose.yml — pyload service:
+services:
+  pyload:
+    # ...existing config...
+    networks:
+      - rexos        # keep the existing network — do not remove it
+      - rex-net      # NEW: lets rex-backend resolve 'pyload'
+
+networks:
+  rexos:            # keep the existing declaration as-is
+    external: true
+  rex-net:          # add this if the stack does not already declare it
+    external: true
+```
+
+Apply (back up first):
+
+```bash
+cd <stack-dir-on-nas>
+cp docker-compose.yml docker-compose.yml.bak-$(date +%F)
+docker compose up -d pyload          # recreates pyload with both networks
+```
+
+Verify from inside rex-backend (no IPs anywhere):
+
+```bash
+docker exec rex-backend getent hosts pyload
+# → should print an IP (e.g. 172.x.x.x) — previously "bad address"
+
+docker exec rex-backend wget -qO- --timeout=10 http://pyload:8000/api/info
+# → should return pyLoad's JSON API info instead of "bad address"
+```
+
+Then set `PYLOAD_URL=http://pyload:8000` in the rex-backend container env
+(if it is not already) and recreate/restart rex-backend so the env applies.
+`rexos` stays intact, so pyLoad's existing connectivity to the rest of the
+arr stack is unaffected.
 
 ## 5. State, backups, updates and rollback
 

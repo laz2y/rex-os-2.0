@@ -82,7 +82,7 @@ never sent to the browser.
 | `NEXTCLOUD_URL` / `NEXTCLOUD_USERNAME` / `NEXTCLOUD_PASSWORD` | Nextcloud OCS |
 | `IMMICH_URL` / `IMMICH_API_KEY` | Immich photos |
 | `QBITTORRENT_URL` / `QBITTORRENT_USERNAME` / `QBITTORRENT_PASSWORD` | qBittorrent (connection probe) |
-| `PYLOAD_URL` / `PYLOAD_USERNAME` / `PYLOAD_PASSWORD` | pyLoad direct-link downloads |
+| `PYLOAD_URL` / `PYLOAD_USERNAME` / `PYLOAD_PASSWORD` | pyLoad direct-link downloads. When rex-backend runs as a container, use the Docker service name — `http://pyload:8000` — and make sure the `pyload` container is attached to the same Docker network as rex-backend (see `DEPLOY.md` → Docker networking). When not on Docker, use the reverse-proxy base URL instead (e.g. `https://pyload.laz2ynas.cc`) |
 
 In production, `node server.js` serves both the built UI (`dist/`) and the
 `/api` backend from one process — see `DEPLOY.md`.

@@ -9,34 +9,82 @@ const pyLoad = require("../services/pyLoadService");
  * Radarr/Sonarr importer already handles downstream.
  */
 
+/**
+ * Classify transport-level failures (DNS, refused, no route, timeout) into a
+ * clear, actionable message. Returns null when the error is an HTTP-level
+ * response from pyLoad itself (handled by the status mapping below).
+ */
+function describeConnectionError(error) {
+  const code = error.code;
+  if (!code) return null;
+
+  let host = null;
+  try {
+    host = pyLoad.getBaseUrl() ? new URL(pyLoad.getBaseUrl()).hostname : null;
+  } catch {
+    /* unparseable PYLOAD_URL — ignore */
+  }
+  const where = host ? ` '${host}'` : "";
+
+  if (code === "ENOTFOUND" || code === "EAI_AGAIN") {
+    const looksLikeServiceName =
+      host && !host.includes(".") && host !== "localhost";
+    return {
+      message:
+        `pyLoad is unreachable: the hostname${where} did not resolve.` +
+        (looksLikeServiceName
+          ? ` '${host}' is a Docker service name — the pyload container must be attached to the same Docker network as rex-backend (rex-net) for it to resolve.`
+          : " Check PYLOAD_URL."),
+    };
+  }
+  if (code === "ECONNREFUSED") {
+    return {
+      message: `pyLoad refused the connection${where} — is pyLoad running and is the port correct?`,
+    };
+  }
+  if (code === "EHOSTUNREACH" || code === "ENETUNREACH" || code === "ENETDOWN") {
+    return {
+      message: `pyLoad is unreachable${where} (no network route) — check the Docker networks shared with rex-backend.`,
+    };
+  }
+  if (code === "ECONNABORTED") {
+    return {
+      message: "pyLoad did not respond in time. Check that pyLoad is running.",
+    };
+  }
+  return null;
+}
+
 /** Friendly, credential-free error for the browser + a log line for the API. */
 function fail(res, error, fallback) {
   // error.status is set by pyLoadService for credential-free auth failures
   // (login rejected, wrong URL, missing CSRF), error.response.status for
   // HTTP errors from pyLoad itself.
   const status = error.response ? error.response.status : error.status || null;
-  const network = !status && (error.code === "ECONNABORTED" || !error.response);
-  const message = network
-    ? "pyLoad did not respond in time. Check that pyLoad is running."
-    : status === 401
-    ? "pyLoad rejected the credentials (check PYLOAD_USERNAME / PYLOAD_PASSWORD)."
-    : status === 404
-    ? "pyLoad API route not found (check PYLOAD_URL)."
-    : status === 400
-    ? "pyLoad rejected the link — it may be malformed or unsupported."
-    : status
-    ? `pyLoad returned HTTP ${status}.`
-    : fallback;
+  const connection = describeConnectionError(error);
+
+  const message =
+    connection?.message ||
+    (status === 401 || status === 403
+      ? "pyLoad rejected the credentials (check PYLOAD_USERNAME / PYLOAD_PASSWORD)."
+      : status === 404
+      ? "pyLoad API route not found (check PYLOAD_URL)."
+      : status === 400
+      ? "pyLoad rejected the link — it may be malformed or unsupported."
+      : status
+      ? `pyLoad returned HTTP ${status}.`
+      : fallback);
 
   // Server-side detail only — never credentials.
   console.error(
     `[pyLoad] ${fallback} (${status || error.code || "network"}) — ${error.message}`
   );
 
-  res.status(network || status === 401 || status === 404 ? 503 : 502).json({
-    ok: false,
-    error: message,
-  });
+  // Transport-level failures (DNS / refused / no route / timeout) are a
+  // 503 "service unavailable"; genuine pyLoad HTTP errors stay a 502.
+  res
+    .status(connection || !status || status === 401 || status === 403 || status === 404 ? 503 : 502)
+    .json({ ok: false, error: message });
 }
 
 /** GET /api/pyload — configuration + reachability for the Direct Link page. */
