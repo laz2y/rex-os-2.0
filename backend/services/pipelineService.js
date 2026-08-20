@@ -218,7 +218,10 @@ async function qbittorrentSection() {
       recent,
     };
   } catch (error) {
-    console.error(`[pipeline] qBittorrent: ${error.message}`);
+    const hint = error.status === 401 || error.status === 403
+      ? " Check QBITTORRENT_USERNAME / QBITTORRENT_PASSWORD."
+      : "";
+    console.error(`[pipeline] qBittorrent: ${error.message}${hint}`);
     return { ...statusOf(error), label: "qBittorrent", error: error.message };
   }
 }

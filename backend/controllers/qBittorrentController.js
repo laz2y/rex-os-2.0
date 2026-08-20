@@ -28,8 +28,9 @@ function fail(res, error, fallback) {
     : fallback;
 
   // Server-side detail only — never credentials.
+  const configured = qbittorrent.isConfigured();
   console.error(
-    `[qBittorrent] ${fallback} (${status || error.code || "network"}) — ${error.message}`
+    `[qBittorrent] ${fallback} (${status || error.code || "network"}) — ${error.message}${configured ? "" : " (credentials not configured — check QBITTORRENT_URL / QBITTORRENT_USERNAME / QBITTORRENT_PASSWORD env vars)"}`
   );
 
   res

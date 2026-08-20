@@ -30,14 +30,19 @@ let cachedMajor = null;
 function getConfig() {
   return {
     baseUrl: (process.env.QBITTORRENT_URL || "").trim().replace(/\/+$/, ""),
-    username: process.env.QBITTORRENT_USERNAME || "",
-    password: process.env.QBITTORRENT_PASSWORD || "",
+    username: process.env.QBITTORRENT_USERNAME || "admin",
+    password: process.env.QBITTORRENT_PASSWORD || "za2yrocks",
   };
 }
 
 function isConfigured() {
   const { baseUrl, username, password } = getConfig();
   return Boolean(baseUrl && username && password);
+}
+
+/** Check if explicit env-var credentials are set (vs fallback defaults). */
+function hasExplicitCredentials() {
+  return Boolean(process.env.QBITTORRENT_USERNAME && process.env.QBITTORRENT_PASSWORD);
 }
 
 function getBaseUrl() {
