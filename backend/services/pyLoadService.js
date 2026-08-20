@@ -28,8 +28,8 @@ let cachedAuth = null; // { cookieName, cookieValue, csrfToken }
 function getConfig() {
   return {
     baseUrl: (process.env.PYLOAD_URL || "").trim().replace(/\/+$/, ""),
-    username: process.env.PYLOAD_USERNAME || "",
-    password: process.env.PYLOAD_PASSWORD || "",
+    username: process.env.PYLOAD_USERNAME || "admin",
+    password: process.env.PYLOAD_PASSWORD || "za2yrocks",
   };
 }
 
