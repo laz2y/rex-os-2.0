@@ -20,7 +20,7 @@ const axios = require("axios");
 const LOGIN_TIMEOUT = 10000;
 const API_TIMEOUT = 15000;
 
-let cachedSid = null;
+let cachedCookie = null;  // { name: string, value: string }
 
 // qBittorrent 5.0+ renamed the control endpoints (pause→stop, resume→start)
 // and the paused state names (pausedUP→stoppedUP). The API major version is
@@ -44,8 +44,13 @@ function getBaseUrl() {
   return getConfig().baseUrl || null;
 }
 
-/** Extract the SID session cookie from Set-Cookie headers. */
-function extractSid(setCookie) {
+/**
+ * Extract the session cookie from Set-Cookie headers.
+ * qBittorrent <5: cookie name is "SID".
+ * qBittorrent 5+: cookie name is "QBT_SID_<port>" (e.g. QBT_SID_8080).
+ * Returns { name, value } or null.
+ */
+function extractCookie(setCookie) {
   const headers = Array.isArray(setCookie)
     ? setCookie
     : setCookie
@@ -54,8 +59,11 @@ function extractSid(setCookie) {
   for (const header of headers) {
     for (const part of String(header).split(";")) {
       const eq = part.indexOf("=");
-      if (eq > 0 && part.slice(0, eq).trim() === "SID") {
-        return part.slice(eq + 1).trim();
+      if (eq > 0) {
+        const name = part.slice(0, eq).trim();
+        if (name === "SID" || /^QBT_SID_\d+$/.test(name)) {
+          return { name, value: part.slice(eq + 1).trim() };
+        }
       }
     }
   }
@@ -69,10 +77,10 @@ function apiError(message, status) {
   return error;
 }
 
-function authHeaders(sid) {
+function authHeaders(cookie) {
   const { baseUrl } = getConfig();
   return {
-    Cookie: `SID=${sid}`,
+    Cookie: `${cookie.name}=${cookie.value}`,
     Referer: baseUrl,
   };
 }
@@ -106,27 +114,33 @@ async function login() {
   }
 
   const body = String(res.data || "").trim();
-  if (body !== "Ok.") {
+  // qBittorrent <5 returns 200 with body "Ok." on success.
+  // qBittorrent 5+ returns 204 No Content (empty body) on success.
+  // Both versions return "Fails." in the body on wrong credentials.
+  const loginOk = res.status === 204 || body === "Ok.";
+  const loginFailed = body.includes("Fails");
+
+  if (!loginOk) {
     throw apiError(
-      body.includes("Fails")
+      loginFailed
         ? "qBittorrent rejected the credentials."
-        : "qBittorrent login failed.",
-      body.includes("Fails") ? 401 : 502
+        : "qBittorrent login failed (HTTP " + res.status + ").",
+      loginFailed ? 401 : 502
     );
   }
 
-  const sid = extractSid(res.headers["set-cookie"]);
-  if (!sid) {
+  const cookie = extractCookie(res.headers["set-cookie"]);
+  if (!cookie) {
     throw apiError("qBittorrent login did not return a session cookie.", 502);
   }
 
-  cachedSid = sid;
-  return sid;
+  cachedCookie = cookie;
+  return cookie;
 }
 
 /** Force a fresh login next call (used after an auth failure). */
 function resetSession() {
-  cachedSid = null;
+  cachedCookie = null;
 }
 
 /**
@@ -134,15 +148,15 @@ function resetSession() {
  * re-login and retry once so a stale/expired session self-heals.
  */
 async function withAuth(fn) {
-  let sid = cachedSid || (await login());
+  let cookie = cachedCookie || (await login());
   try {
-    return await fn(sid);
+    return await fn(cookie);
   } catch (error) {
     const status = error.response ? error.response.status : error.status || null;
     if (status === 401 || status === 403) {
-      cachedSid = null;
-      sid = await login();
-      return fn(sid);
+      cachedCookie = null;
+      cookie = await login();
+      return fn(cookie);
     }
     throw error;
   }
@@ -223,10 +237,10 @@ function mapTorrent(torrent) {
 
 /** All torrents (name, state, progress, speeds, ratio, ETA, seeds/peers). */
 async function getTorrents() {
-  return withAuth(async (sid) => {
+  return withAuth(async (cookie) => {
     const { baseUrl } = getConfig();
     const { data } = await axios.get(`${baseUrl}/api/v2/torrents/info`, {
-      headers: authHeaders(sid),
+      headers: authHeaders(cookie),
       timeout: API_TIMEOUT,
     });
     return Array.isArray(data) ? data.map(mapTorrent) : [];
@@ -235,10 +249,10 @@ async function getTorrents() {
 
 /** Global transfer stats (up/down speeds and session totals). */
 async function getTransfer() {
-  return withAuth(async (sid) => {
+  return withAuth(async (cookie) => {
     const { baseUrl } = getConfig();
     const { data } = await axios.get(`${baseUrl}/api/v2/transfer/info`, {
-      headers: authHeaders(sid),
+      headers: authHeaders(cookie),
       timeout: API_TIMEOUT,
     });
     return {
@@ -254,10 +268,10 @@ async function getTransfer() {
 
 /** qBittorrent version string (e.g. "v5.1.4") — also caches the API major. */
 async function getVersion() {
-  return withAuth(async (sid) => {
+  return withAuth(async (cookie) => {
     const { baseUrl } = getConfig();
     const { data } = await axios.get(`${baseUrl}/api/v2/app/version`, {
-      headers: authHeaders(sid),
+      headers: authHeaders(cookie),
       timeout: API_TIMEOUT,
     });
     const raw = String(data || "").trim() || "reachable";
@@ -285,7 +299,7 @@ async function addTorrent(urls) {
     .filter(Boolean);
   if (list.length === 0) throw new Error("No download link provided.");
 
-  return withAuth(async (sid) => {
+  return withAuth(async (cookie) => {
     const { baseUrl } = getConfig();
     const res = await axios.post(
       `${baseUrl}/api/v2/torrents/add`,
@@ -293,7 +307,7 @@ async function addTorrent(urls) {
       {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          ...authHeaders(sid),
+          ...authHeaders(cookie),
         },
         timeout: API_TIMEOUT,
       }
@@ -317,7 +331,7 @@ function toHashList(hashes) {
 }
 
 async function postControl(endpoint, params) {
-  return withAuth(async (sid) => {
+  return withAuth(async (cookie) => {
     const { baseUrl } = getConfig();
     const doPost = (name) =>
       axios.post(
@@ -326,7 +340,7 @@ async function postControl(endpoint, params) {
         {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
-            ...authHeaders(sid),
+            ...authHeaders(cookie),
           },
           timeout: API_TIMEOUT,
         }
