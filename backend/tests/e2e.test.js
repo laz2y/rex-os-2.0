@@ -81,7 +81,9 @@ test("9: normal Direct Link success through the full stack → accepted", async 
   assert.equal(res.body.status, "accepted");
   assert.equal(res.body.message, "Added to pyLoad");
   assert.equal(res.body.packageName, url);
-  assert.equal(res.body.url, url);
+  // Raw URL is no longer returned; only the sanitized display value is.
+  assert.equal(res.body.url, undefined);
+  assert.equal(res.body.displayUrl, "https://files.example.com/normal/Success.2024.mkv");
   assert.match(res.body.fingerprint, /^[0-9a-f]{32}$/);
   assert.equal(typeof res.body.packageId, "number");
   assert.equal(mock.state.addCalls, 1);
@@ -96,7 +98,7 @@ test("10: fake/demo credentials remain intact and are what gets used", () => {
   assert.equal(process.env.PYLOAD_PASSWORD, undefined, "no real creds injected");
 });
 
-test("2: definite rejection through the full stack → structured rejected", async () => {
+test("2/B: explicit validation 400 + no package → structured rejected (e2e)", async () => {
   mock.state.addMode = "reject";
   mock.state.rejectReason = "No valid links supplied";
   const url = "https://files.example.com/rejected/Bad.Link.mkv";
@@ -109,7 +111,51 @@ test("2: definite rejection through the full stack → structured rejected", asy
   assert.ok(res.body.message.startsWith("pyLoad rejected the link:"));
   assert.ok(res.body.message.includes("No valid links supplied"));
   assert.equal(res.body.error, res.body.message); // legacy .error alias
+  assert.equal(res.body.url, undefined); // no raw URL in responses
   assert.equal(mock.state.addCalls, 2, "one add attempt per submission");
+});
+
+test("A: generic HTTP 400 'Bad Request' + no package → ambiguous (e2e)", async () => {
+  mock.state.addMode = "reject";
+  mock.state.rejectReason = "Bad Request"; // generic — proves nothing
+  const url = "https://files.example.com/generic400/Generic.Error.mkv";
+
+  const res = await add(url);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.ok, false);
+  assert.equal(res.body.status, "ambiguous");
+  assert.equal(
+    res.body.message,
+    "Submission may have been accepted by pyLoad. Checking status…"
+  );
+  assert.equal(mock.state.addCalls, 3, "one attempt; not re-posted");
+});
+
+test("C: HTTP 400 + package actually exists → accepted/recovered (e2e)", async () => {
+  // Mock creates the package first, then answers 400 — the Ant-Man variant
+  // with a validation-status code instead of a gateway error.
+  mock.state.addMode = "accept-then-400";
+  const url = "https://files.example.com/ant400/Created.But.400.mkv?token=secrettoken77";
+
+  const res = await add(url);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.ok, true);
+  assert.equal(res.body.status, "accepted");
+  assert.equal(res.body.recovered, true);
+  assert.equal(typeof res.body.packageId, "number");
+  // The raw URL is no longer returned as its own `url` field, and the
+  // display value carries no query/fragment. (`packageName` is pyLoad's own
+  // package label — the proven { name: <URL> } schema — and is required by
+  // the existing Direct Link page for display and name-matching against
+  // pyLoad's status rows; the submitter already knows the URL they pasted.)
+  assert.equal(res.body.url, undefined, "no raw url field in the response");
+  assert.ok(
+    !res.body.displayUrl.includes("?"),
+    "displayUrl must have its query stripped"
+  );
+  assert.equal(res.body.displayUrl, "https://files.example.com/ant400/Created.But.400.mkv");
 });
 
 test("D: Ant-Man case — package created, response is HTTP 502 → recovered", async () => {
@@ -125,7 +171,7 @@ test("D: Ant-Man case — package created, response is HTTP 502 → recovered", 
   assert.equal(res.body.recovered, true);
   assert.equal(res.body.message, "Added to pyLoad");
   assert.equal(typeof res.body.packageId, "number");
-  assert.equal(mock.state.addCalls, 3, "never re-posted add_package");
+  assert.equal(mock.state.addCalls, 5, "never re-posted add_package");
   // The signed URL must not leak into anything server-side (checked in unit
   // tests for logs); the client response only echoes what the client sent.
 });

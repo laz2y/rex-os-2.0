@@ -56,6 +56,23 @@ test("7: Direct Link button and submit handler are double-click guarded", () => 
   );
 });
 
+test("add responses expose fingerprint + sanitized displayUrl only — never the raw URL", () => {
+  const src = read("backend/controllers/pyLoadController.js");
+  assert.ok(
+    src.includes("displayUrl: sanitizeUrlForDisplay(trimmed)"),
+    "responses use the sanitized display value"
+  );
+  assert.ok(
+    !src.includes("url: trimmed"),
+    "raw signed URL must not be returned in add responses"
+  );
+  const identity = read("backend/services/submissionIdentity.js");
+  assert.ok(
+    identity.includes("function sanitizeUrlForDisplay"),
+    "display sanitizer exists"
+  );
+});
+
 test("frontend handles the three submission outcomes", () => {
   const src = read("src/pages/DirectLink.jsx");
   assert.ok(src.includes('outcome === "rejected"'), "rejected branch present");

@@ -47,8 +47,34 @@ const PREFLIGHT_CODES = new Set([
   "ENETDOWN",
 ]);
 
-/** HTTP statuses where pyLoad explicitly refused before creating a package. */
+/** HTTP statuses where pyLoad *may* have refused before creating a package. */
 const VALIDATION_STATUSES = new Set([400, 422]);
+
+/**
+ * Explicit pre-enqueue validation phrases — deliberately NARROW.
+ *
+ * A 400/422 is only a DEFINITE rejection when pyLoad's own response clearly
+ * says the links/input were invalid BEFORE enqueueing. Generic "Bad Request"
+ * bodies, empty bodies, HTML error pages and axios stock messages are treated
+ * as unclear: a 400/422 can also arrive AFTER pyLoad already created the
+ * package (the live Ant-Man evidence), so unknown errors stay ambiguous.
+ * No broad keyword rule that could turn unknown errors into rejection.
+ */
+const EXPLICIT_VALIDATION_RE =
+  /\b(?:no valid links?|invalid links?|no links\s*(?:supplied|provided|given)?|invalid urls?|malformed\s*(?:url|link)|empty links?)\b/i;
+
+function isDefiniteValidationError(error) {
+  const status = httpStatusOf(error);
+  if (!VALIDATION_STATUSES.has(status)) return false;
+
+  // Only a structured pyLoad body (JSON object with a message field) can
+  // clearly prove pre-enqueue validation. HTML pages, empty bodies and plain
+  // strings ("Bad Request") cannot.
+  const data = error && error.response ? error.response.data : null;
+  if (!data || typeof data !== "object") return false;
+
+  return EXPLICIT_VALIDATION_RE.test(sanitizeText(errorDetail(error)));
+}
 
 /** Extract the HTTP status of a pyLoad/axios error, or null for transport errors. */
 function httpStatusOf(error) {
@@ -255,9 +281,17 @@ async function classifyFailure(pyLoad, { url, packageName, fingerprint, error })
     };
   }
 
-  // 5) Clear validation refusal AND reconciliation ran cleanly with no
-  //    package → definite rejection (nothing was created).
-  if (VALIDATION_STATUSES.has(status) && !rec.undetermined) {
+  // 5) Definite rejection ONLY when BOTH hold:
+  //      (a) pyLoad's response clearly represents a definite validation/input
+  //          rejection before enqueueing (narrow explicit-phrase match), AND
+  //      (b) reconciliation ran cleanly and found no created package.
+  //    Generic/empty/unclear 400/422 bodies → AMBIGUOUS when nothing is found
+  //    (the 400 may have arrived after pyLoad created the package).
+  if (
+    VALIDATION_STATUSES.has(status) &&
+    isDefiniteValidationError(error) &&
+    !rec.undetermined
+  ) {
     return {
       status: "rejected",
       ok: false,

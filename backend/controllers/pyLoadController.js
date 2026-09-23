@@ -1,5 +1,6 @@
 const pyLoad = require("../services/pyLoadService");
 const { submitDirectLink } = require("../services/directLinkSubmission");
+const { sanitizeUrlForDisplay } = require("../services/submissionIdentity");
 
 /**
  * Direct Link Add — REX → pyLoad.
@@ -116,11 +117,18 @@ exports.getInfo = async (req, res) => {
  * can read `status` directly; validation/config errors keep 400/503):
  *
  *   accepted:  { ok:true,  status:"accepted",  packageId?, packageName,
- *                recovered?, message:"Added to pyLoad", fingerprint, url }
+ *                recovered?, message:"Added to pyLoad", fingerprint,
+ *                displayUrl }
  *   rejected:  { ok:false, status:"rejected",  message:"pyLoad rejected the
- *                link: <sanitized reason>", error:<same>, fingerprint, url }
+ *                link: <sanitized reason>", error:<same>, fingerprint,
+ *                displayUrl }
  *   ambiguous: { ok:false, status:"ambiguous", message:"Submission may have
- *                been accepted by pyLoad. Checking status…", fingerprint, url }
+ *                been accepted by pyLoad. Checking status…", fingerprint,
+ *                displayUrl }
+ *
+ * `displayUrl` is a sanitized, URL-like field for UI compatibility: origin +
+ * path only, with the query string and fragment removed — signed query
+ * credentials never leave the server. The full raw URL is never returned.
  *
  * Idempotency (URL fingerprint), classification and reconciliation live in
  * services/directLinkSubmission.js; diagnostics are logged there, sanitized.
@@ -162,7 +170,9 @@ exports.addLink = async (req, res) => {
       ok: result.status === "accepted",
       status: result.status,
       message: result.message,
-      url: trimmed,
+      // Sanitized display value (origin + path, no query/fragment). The raw
+      // signed URL is never returned; correlation uses `fingerprint`.
+      displayUrl: sanitizeUrlForDisplay(trimmed),
       fingerprint: result.fingerprint,
       ...(result.status === "accepted"
         ? {

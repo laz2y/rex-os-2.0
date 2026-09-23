@@ -110,9 +110,9 @@ test("A: pyLoad acknowledges the package → accepted with packageId", async () 
 });
 
 // ---------------------------------------------------------------------------
-// B / 2 — definite rejection
+// B / 2 — definite rejection (explicit validation phrase + clean reconcile)
 // ---------------------------------------------------------------------------
-test("B: pyLoad rejects before creating a package → rejected with safe reason", async () => {
+test("B: explicit validation 400 'no valid links' + no package → rejected with safe reason", async () => {
   const pyLoad = makePyLoad(async () => {
     throw httpError(400, { error: "No valid links supplied" });
   });
@@ -129,6 +129,76 @@ test("B: pyLoad rejects before creating a package → rejected with safe reason"
   assert.equal(pyLoad.state.downloadsCalls, 1);
   assert.equal(result.reconcile, "not-found");
   assert.equal(pyLoad.state.addCalls, 1);
+});
+
+// ---------------------------------------------------------------------------
+// 400/422 classification — REJECTED only for EXPLICIT validation + no package
+// ---------------------------------------------------------------------------
+test("A: generic HTTP 400 'Bad Request' + no package → ambiguous, NOT rejected", async () => {
+  const pyLoad = makePyLoad(async () => {
+    throw httpError(400, { error: "Bad Request" });
+  });
+  const { registry, log } = fresh();
+
+  const result = await submitDirectLink(URL_A, { pyLoad, registry, log });
+
+  // The 400 may have arrived after pyLoad created the package (Ant-Man).
+  assert.equal(result.status, "ambiguous");
+  assert.equal(result.reconcile, "not-found");
+  assert.equal(pyLoad.state.addCalls, 1);
+});
+
+test("A2: HTTP 400 with empty or HTML body + no package → ambiguous", async () => {
+  for (const body of ["", "<html><body>Bad Request</body></html>"]) {
+    const pyLoad = makePyLoad(async () => {
+      throw httpError(400, body);
+    });
+    const { registry, log } = fresh();
+
+    const result = await submitDirectLink(URL_A, { pyLoad, registry, log });
+
+    assert.equal(result.status, "ambiguous", `body=${JSON.stringify(body)}`);
+    assert.equal(pyLoad.state.addCalls, 1);
+  }
+});
+
+test("A3: axios stock-message 400 and unknown pyLoad error → ambiguous", async () => {
+  const variants = [
+    httpError(400, "Request failed with status code 400"), // plain string body
+    httpError(422, { error: "Something went wrong" }), // unknown 422 text
+    httpError(400, null), // no body at all
+  ];
+  for (const error of variants) {
+    const pyLoad = makePyLoad(async () => {
+      throw error;
+    });
+    const { registry, log } = fresh();
+
+    const result = await submitDirectLink(URL_A, { pyLoad, registry, log });
+
+    assert.equal(result.status, "ambiguous");
+    assert.equal(pyLoad.state.addCalls, 1);
+  }
+});
+
+test("B2: explicit validation 400 but reconciliation UNDETERMINED → ambiguous", async () => {
+  // Even a clearly phrased rejection is not provable when reconciliation
+  // could not run — we cannot prove no package was created.
+  const pyLoad = makePyLoad(
+    async () => {
+      throw httpError(400, { error: "No valid links supplied" });
+    },
+    {
+      queueFails: true,
+      downloadsFails: true,
+    }
+  );
+  const { registry, log } = fresh();
+
+  const result = await submitDirectLink(URL_A, { pyLoad, registry, log });
+
+  assert.equal(result.status, "ambiguous");
+  assert.equal(result.reconcile, "unavailable");
 });
 
 // ---------------------------------------------------------------------------

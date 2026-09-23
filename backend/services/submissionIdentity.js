@@ -93,10 +93,27 @@ function sanitizeText(value) {
   return text;
 }
 
+/**
+ * Sanitized, URL-like display value for API responses: origin + path with the
+ * query string and fragment removed. The raw signed URL never leaves the
+ * server; correlation uses the fingerprint.
+ */
+function sanitizeUrlForDisplay(raw) {
+  try {
+    const parsed = new URL(String(raw == null ? "" : raw).trim());
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
+}
+
 module.exports = {
   PACKAGE_NAME_LIMIT,
   normalizeUrl,
   fingerprintUrl,
   packageNameFor,
   sanitizeText,
+  sanitizeUrlForDisplay,
 };

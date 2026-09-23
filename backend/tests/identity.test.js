@@ -11,6 +11,7 @@ const {
   fingerprintUrl,
   packageNameFor,
   sanitizeText,
+  sanitizeUrlForDisplay,
 } = require("../services/submissionIdentity");
 
 test("fingerprint is deterministic for the same URL", () => {
@@ -90,4 +91,22 @@ test("sanitizeText strips query strings, secrets and JWTs", () => {
   assert.equal(sanitizeText(null), "");
   assert.equal(sanitizeText(undefined), "");
   assert.ok(sanitizeText("x".repeat(1000)).length <= 301);
+});
+
+test("sanitizeUrlForDisplay strips query + fragment — signed params never returned", () => {
+  assert.equal(
+    sanitizeUrlForDisplay("https://cdn.example.com/movie.mkv?token=SIGNED&sig=zz"),
+    "https://cdn.example.com/movie.mkv"
+  );
+  assert.equal(
+    sanitizeUrlForDisplay("https://cdn.example.com/a.mkv#frag"),
+    "https://cdn.example.com/a.mkv"
+  );
+  assert.equal(
+    sanitizeUrlForDisplay("  https://cdn.example.com/a.mkv?x=1#f  "),
+    "https://cdn.example.com/a.mkv"
+  );
+  // Unparseable input yields an empty display value — never echoed raw.
+  assert.equal(sanitizeUrlForDisplay("not a url"), "");
+  assert.equal(sanitizeUrlForDisplay(null), "");
 });

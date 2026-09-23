@@ -14,6 +14,7 @@
  *       "reject"            → 400 {error}, NO package created
  *       "reject-echo"       → 400 whose body echoes the full signed URL
  *       "accept-then-502"    → create package, then answer 502 (Ant-Man case)
+ *       "accept-then-400"   → create package, then answer generic 400
  *       "drop"              → destroy the socket — response never arrives
  *   GET  /api/get_queue         → queued packages [{pid,name,links}]
  *   GET  /api/status_downloads  → active download rows
@@ -175,6 +176,14 @@ function createMockPyLoad(options = {}) {
           res.statusCode = 502;
           res.setHeader("Content-Type", "text/html");
           return res.end("<html><body>Bad Gateway</body></html>");
+        }
+
+        if (state.addMode === "accept-then-400") {
+          // pyLoad created the package but answers with a GENERIC 400 body —
+          // proves nothing about pre-enqueue validation.
+          res.statusCode = 400;
+          res.setHeader("Content-Type", "application/json");
+          return res.end(JSON.stringify({ error: "Bad Request" }));
         }
 
         res.setHeader("Content-Type", "application/json");
