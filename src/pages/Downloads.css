@@ -216,6 +216,13 @@
   color: #86efac;
 }
 
+/* Ambiguous pyLoad submission — same alert pattern, amber (state only). */
+.qb-alert.warn {
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+}
+
 .qb-alert svg {
   flex-shrink: 0;
   margin-top: 1px;

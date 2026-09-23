@@ -313,6 +313,7 @@ export default function Downloads() {
   const [pyLink, setPyLink] = useState("");
   const [pyAdding, setPyAdding] = useState(false);
   const [pyFormError, setPyFormError] = useState(null);
+  const [pyNotice, setPyNotice] = useState(null); // ambiguous submission
   const [pyRemoving, setPyRemoving] = useState(null);
   const [pyConfirmRemove, setPyConfirmRemove] = useState(null);
 
@@ -384,7 +385,10 @@ export default function Downloads() {
 
   async function handlePySubmit(event) {
     event.preventDefault();
+    // Double-submit guard (Enter can fire while the button is disabled).
+    if (pyAdding) return;
     setPyFormError(null);
+    setPyNotice(null);
 
     const trimmed = pyLink.trim();
     if (!trimmed) {
@@ -400,7 +404,26 @@ export default function Downloads() {
 
     setPyAdding(true);
     try {
-      await addDirectLink(trimmed);
+      const data = await addDirectLink(trimmed);
+      const outcome = data?.status;
+
+      // Definite refusal — keep the URL so the user can inspect/fix it.
+      if (outcome === "rejected" || (data?.ok === false && !outcome)) {
+        setPyFormError(
+          data?.message || data?.error || "pyLoad rejected the link.",
+        );
+        return;
+      }
+
+      // Uncertain — do NOT claim success; the backend reconciles on re-check.
+      if (outcome === "ambiguous") {
+        setPyNotice(
+          data?.message ||
+            "Submission may have been accepted by pyLoad. Checking status…",
+        );
+        return;
+      }
+
       setPyLink("");
       setPyLoadLoading(true);
       loadPyLoad();
@@ -975,6 +998,13 @@ export default function Downloads() {
               <div className="qb-alert error" role="alert">
                 <XCircle size={16} />
                 {pyFormError}
+              </div>
+            )}
+
+            {pyNotice && !pyAdding && (
+              <div className="qb-alert warn" role="status">
+                <AlertTriangle size={16} />
+                {pyNotice}
               </div>
             )}
           </section>

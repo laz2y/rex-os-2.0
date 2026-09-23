@@ -16,6 +16,10 @@ const assert = require("node:assert/strict");
 const { createMockPyLoad } = require("./helpers/mockPyLoadServer");
 const controller = require("../controllers/pyLoadController");
 const { submissions } = require("../services/submissionRegistry");
+const {
+  __setPreflight,
+  __resetPreflight,
+} = require("../services/directLinkSubmission");
 const pyLoadService = require("../services/pyLoadService");
 
 // Preserve whatever the environment had; fake dev creds must stay in play.
@@ -35,9 +39,20 @@ before(async () => {
   mock = createMockPyLoad();
   process.env.PYLOAD_URL = await mock.listen();
   pyLoadService.resetSession();
+
+  // These tests exercise controller → orchestrator → registry → axios → mock
+  // pyLoad, so the SOURCE preflight is stubbed: real preflight needs live DNS
+  // and its own coverage lives in preflight.test.js (against a real local HTTP
+  // server). "uncertain" = the probe could not prove anything, so submission
+  // proceeds — the documented, by-design path for an unprobeable source.
+  __setPreflight(async () => ({
+    verdict: "uncertain",
+    reason: "stubbed in e2e",
+  }));
 });
 
 after(async () => {
+  __resetPreflight();
   if (mock) await mock.close();
   for (const [key, value] of Object.entries(savedEnv)) {
     if (value === undefined) delete process.env[key];
@@ -80,10 +95,13 @@ test("9: normal Direct Link success through the full stack → accepted", async 
   assert.equal(res.body.ok, true);
   assert.equal(res.body.status, "accepted");
   assert.equal(res.body.message, "Added to pyLoad");
-  assert.equal(res.body.packageName, url);
-  // Raw URL is no longer returned; only the sanitized display value is.
+  // Raw URL is no longer returned; only the sanitized display value and the
+  // leak-safe display name (URL-path basename, never the URL-derived pyLoad
+  // package label, which may carry signed query credentials) are.
   assert.equal(res.body.url, undefined);
+  assert.equal(res.body.packageName, undefined);
   assert.equal(res.body.displayUrl, "https://files.example.com/normal/Success.2024.mkv");
+  assert.equal(res.body.displayName, "Success.2024.mkv");
   assert.match(res.body.fingerprint, /^[0-9a-f]{32}$/);
   assert.equal(typeof res.body.packageId, "number");
   assert.equal(mock.state.addCalls, 1);
@@ -145,12 +163,16 @@ test("C: HTTP 400 + package actually exists → accepted/recovered (e2e)", async
   assert.equal(res.body.status, "accepted");
   assert.equal(res.body.recovered, true);
   assert.equal(typeof res.body.packageId, "number");
-  // The raw URL is no longer returned as its own `url` field, and the
-  // display value carries no query/fragment. (`packageName` is pyLoad's own
-  // package label — the proven { name: <URL> } schema — and is required by
-  // the existing Direct Link page for display and name-matching against
-  // pyLoad's status rows; the submitter already knows the URL they pasted.)
+  // The raw URL is no longer returned — neither as its own `url` field nor as
+  // the URL-derived pyLoad package label — and the display value carries no
+  // query/fragment. (The Direct Link page already holds the URL the user
+  // pasted, which is what it matches against pyLoad's status rows.)
   assert.equal(res.body.url, undefined, "no raw url field in the response");
+  assert.equal(res.body.packageName, undefined, "no URL-derived package label");
+  assert.ok(
+    !String(res.body.displayName || "").includes("token"),
+    "displayName must not carry signed query parameters"
+  );
   assert.ok(
     !res.body.displayUrl.includes("?"),
     "displayUrl must have its query stripped"
@@ -213,6 +235,36 @@ test("6+7: double click — two concurrent requests, ONE add_package", async () 
   assert.equal(r2.body.status, "accepted");
   assert.equal(mock.state.addCalls, before + 1, "single add despite double click");
   assert.equal([r1.body, r2.body].filter((b) => b.duplicate).length, 1);
+});
+
+test("preflight rejection blocks pyLoad entirely (controller path)", async () => {
+  __setPreflight(async () => ({
+    verdict: "rejected",
+    reason: "Source rejected the link: HTTP 403 Forbidden",
+  }));
+  const before = mock.state.addCalls;
+  const url = "https://files.example.com/expired/Expired.Token.mkv?token=gone";
+
+  try {
+    const res = await add(url);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.ok, false);
+    assert.equal(res.body.status, "rejected");
+    assert.match(res.body.message, /Source rejected the link/);
+    assert.equal(res.body.error, res.body.message); // legacy .error alias
+    assert.equal(res.body.url, undefined);
+    assert.equal(
+      mock.state.addCalls,
+      before,
+      "a definitely-refused source is never handed to pyLoad"
+    );
+  } finally {
+    __setPreflight(async () => ({
+      verdict: "uncertain",
+      reason: "stubbed in e2e",
+    }));
+  }
 });
 
 test("validation errors keep their original 400 contract", async () => {

@@ -88,6 +88,21 @@ test("frontend handles the three submission outcomes", () => {
   assert.equal(clears.length, 1, "URL cleared only on accepted");
 });
 
+test("Unified Downloads pyLoad tab also honours the three submission outcomes", () => {
+  const src = read("src/pages/Downloads.jsx");
+  assert.ok(src.includes('outcome === "rejected"'), "rejected branch present");
+  assert.ok(src.includes('outcome === "ambiguous"'), "ambiguous branch present");
+  assert.ok(src.includes("if (pyAdding) return;"), "double-submit guard present");
+  // The link input must be cleared EXACTLY once — in the accepted path only
+  // (rejected/ambiguous keep the URL for the user).
+  const clears = src.match(/setPyLink\(""\)/g) || [];
+  assert.equal(clears.length, 1, "URL cleared only on accepted");
+  assert.ok(
+    read("src/pages/Downloads.css").includes(".qb-alert.warn"),
+    "ambiguous-state variant shares the existing amber alert pattern"
+  );
+});
+
 // ---------------------------------------------------------------------------
 // Contract + wiring preserved
 // ---------------------------------------------------------------------------
