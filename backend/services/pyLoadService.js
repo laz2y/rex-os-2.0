@@ -25,6 +25,16 @@ const API_TIMEOUT = 15000;
 
 let cachedAuth = null; // { cookieName, cookieValue, csrfToken }
 
+/**
+ * Single-flight login: when several requests race on a cold session (e.g. the
+ * Direct Link page firing /api/pyload + /api/pyload/status concurrently), they
+ * all await the SAME login promise instead of each calling pyLoad's /login —
+ * one login invalidating another was the confirmed cause of the false
+ * "pyLoad is unreachable" state. Cleared on failure so the next request can
+ * retry normally.
+ */
+let loginInFlight = null;
+
 function getConfig() {
   return {
     baseUrl: (process.env.PYLOAD_URL || "").trim().replace(/\/+$/, ""),
@@ -161,7 +171,17 @@ async function login() {
 
 async function getSession() {
   if (cachedAuth) return cachedAuth;
-  return login();
+  if (!loginInFlight) {
+    loginInFlight = login()
+      .then((auth) => {
+        cachedAuth = auth;
+        return auth;
+      })
+      .finally(() => {
+        loginInFlight = null; // success: cached; failure: clear for retry
+      });
+  }
+  return loginInFlight;
 }
 
 /** Force a fresh session next call (used after an auth failure). */
@@ -188,7 +208,9 @@ async function withAuth(fn) {
     const status = error.response ? error.response.status : error.status || null;
     if (status === 401 || status === 403) {
       resetSession();
-      auth = await login();
+      // Re-login through getSession so concurrent retries also share ONE
+      // in-flight login instead of stampeding pyLoad's /login.
+      auth = await getSession();
       return fn(auth);
     }
     throw error;
@@ -376,29 +398,89 @@ async function getQueue() {
 }
 
 /**
- * Queue packages in raw-ish form for submission reconciliation (Fix #1).
- * Returns [{ id, name, links }] where `links` is the raw link list when pyLoad
- * provides one — lets REX prove a package exists after an ambiguous add
- * without ever re-posting add_package. Additive; getQueue() (Pipeline page)
- * is unchanged.
+ * Read-only reconciliation sources (Fix #1), using the pyLoad 0.5.x data
+ * endpoints verified on the live NAS. Both return
+ *   [{ id, name, links: [{ url, name }] }]
+ * so the orchestrator can match the ORIGINAL submitted URL — the only exact
+ * identity — inside packages[].links[].url.
  */
-async function listPackages() {
+function mapPackageData(list) {
+  return (Array.isArray(list) ? list : []).map((pkg) => ({
+    id: pkg.pid ?? null,
+    name: pkg.name || "",
+    links: Array.isArray(pkg.links)
+      ? pkg.links.map((l) => ({
+          url: typeof l === "string" ? l : l && l.url,
+          name: typeof l === "object" && l ? l.name : undefined,
+        }))
+      : [],
+  }));
+}
+
+/** GET /api/get_queue_data — packages currently in the queue. */
+async function getQueueData() {
   return withAuth(async (auth) => {
     const { baseUrl } = getConfig();
-    const { data } = await axios.get(`${baseUrl}/api/get_queue`, {
+    const { data } = await axios.get(`${baseUrl}/api/get_queue_data`, {
       headers: authHeaders(auth),
       timeout: API_TIMEOUT,
     });
-    const list = Array.isArray(data)
-      ? data
-      : data && Array.isArray(data.packages)
-      ? data.packages
-      : [];
-    return list.map((pkg) => ({
-      id: pkg.pid ?? null,
-      name: pkg.name || "",
-      links: Array.isArray(pkg.links) ? pkg.links : [],
-    }));
+    return mapPackageData(Array.isArray(data) ? data : data && data.packages);
+  });
+}
+
+/** GET /api/get_collector_data — packages parked in the collector. */
+async function getCollectorData() {
+  return withAuth(async (auth) => {
+    const { baseUrl } = getConfig();
+    const { data } = await axios.get(`${baseUrl}/api/get_collector_data`, {
+      headers: authHeaders(auth),
+      timeout: API_TIMEOUT,
+    });
+    return mapPackageData(Array.isArray(data) ? data : data && data.packages);
+  });
+}
+
+/**
+ * Read-only package detail — original source URLs (Fix #1 reconciliation
+ * step 4). Returns { id, name, links: [{ url, name }] } or null.
+ */
+async function getPackageData(pid) {
+  return withAuth(async (auth) => {
+    const { baseUrl } = getConfig();
+    const { data } = await axios.get(`${baseUrl}/api/get_package_data`, {
+      params: { pid },
+      headers: authHeaders(auth),
+      timeout: API_TIMEOUT,
+    });
+    if (!data || typeof data !== "object") return null;
+    return {
+      id: data.pid ?? pid,
+      name: data.name || "",
+      links: Array.isArray(data.links)
+        ? data.links.map((l) => ({
+            url: typeof l === "string" ? l : l && l.url,
+            name: typeof l === "object" && l ? l.name : undefined,
+          }))
+        : [],
+    };
+  });
+}
+
+/**
+ * Read-only file detail — original source URL for one file (reconciliation
+ * step 4). Returns { fid, url, name } or null.
+ */
+async function getFileData(fid) {
+  return withAuth(async (auth) => {
+    const { baseUrl } = getConfig();
+    const { data } = await axios.get(`${baseUrl}/api/get_file_data`, {
+      params: { fid },
+      headers: authHeaders(auth),
+      timeout: API_TIMEOUT,
+    });
+    if (!data || typeof data !== "object") return null;
+    return { fid: data.fid ?? fid, url: data.url, name: data.name };
   });
 }
 
@@ -437,6 +519,9 @@ module.exports = {
   deletePackages,
   getDownloads,
   getQueue,
-  listPackages,
+  getQueueData,
+  getCollectorData,
+  getPackageData,
+  getFileData,
   probe,
 };

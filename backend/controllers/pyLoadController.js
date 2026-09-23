@@ -1,6 +1,8 @@
 const pyLoad = require("../services/pyLoadService");
 const { submitDirectLink } = require("../services/directLinkSubmission");
-const { sanitizeUrlForDisplay } = require("../services/submissionIdentity");
+const {
+  sanitizeUrlForDisplay,
+} = require("../services/submissionIdentity");
 
 /**
  * Direct Link Add — REX → pyLoad.
@@ -126,9 +128,11 @@ exports.getInfo = async (req, res) => {
  *                been accepted by pyLoad. Checking status…", fingerprint,
  *                displayUrl }
  *
- * `displayUrl` is a sanitized, URL-like field for UI compatibility: origin +
- * path only, with the query string and fragment removed — signed query
- * credentials never leave the server. The full raw URL is never returned.
+ * `displayUrl` is scheme://host/path only — query/fragment removed, so
+ * signed query credentials never leave the server. `displayName` is leak-safe
+ * (Content-Disposition filename, resolved filename, path basename, or
+ * "Direct download") — the pyLoad package label is URL-derived and is never
+ * sent to the browser. Correlation uses `fingerprint`.
  *
  * Idempotency (URL fingerprint), classification and reconciliation live in
  * services/directLinkSubmission.js; diagnostics are logged there, sanitized.
@@ -177,7 +181,8 @@ exports.addLink = async (req, res) => {
       ...(result.status === "accepted"
         ? {
             packageId: result.packageId ?? null,
-            packageName: result.packageName,
+            // Leak-safe name — never the URL-derived pyLoad package label.
+            displayName: result.displayName,
             recovered: Boolean(result.recovered),
           }
         : {}),

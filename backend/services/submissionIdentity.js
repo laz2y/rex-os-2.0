@@ -109,6 +109,51 @@ function sanitizeUrlForDisplay(raw) {
   }
 }
 
+/**
+ * Human-safe display name (Fix #1 package-name leak protection). The pyLoad
+ * package label is the submitted URL (possibly signed) — never return it raw.
+ * Priority: Content-Disposition filename → resolved filename → safe URL-path
+ * basename → neutral fallback.
+ */
+function safeDisplayName({ contentDisposition, resolvedName, url } = {}) {
+  // 1) Content-Disposition: filename="..." / filename*=UTF-8''...
+  if (contentDisposition) {
+    const star = String(contentDisposition).match(
+      /filename\*=UTF-8''([^;]+)/i
+    );
+    if (star && star[1].trim()) {
+      try {
+        return decodeURIComponent(star[1].trim()).slice(0, 150);
+      } catch {
+        /* fall through to plain filename */
+      }
+    }
+    const plain = String(contentDisposition).match(/filename\s*=\s*(?:"([^"]*)"|([^;]+))/i);
+    const value = plain && (plain[1] ?? plain[2]);
+    if (value && String(value).trim()) {
+      return String(value).trim().replace(/^"|"$/g, "").slice(0, 150);
+    }
+  }
+
+  // 2) pyLoad's resolved filename (a real file name, not the URL).
+  if (resolvedName && String(resolvedName).trim()) {
+    const name = String(resolvedName).trim();
+    if (!name.includes("?") && !name.includes("&")) return name.slice(0, 150);
+  }
+
+  // 3) Safe basename of the final URL path (query already excluded).
+  try {
+    const parsed = new URL(String(url == null ? "" : url).trim());
+    const base = decodeURIComponent(parsed.pathname.split("/").pop() || "");
+    if (base && base !== "/" && !base.includes("?")) return base.slice(0, 150);
+  } catch {
+    /* not a URL — fall through */
+  }
+
+  // 4) Neutral fallback.
+  return "Direct download";
+}
+
 module.exports = {
   PACKAGE_NAME_LIMIT,
   normalizeUrl,
@@ -116,4 +161,5 @@ module.exports = {
   packageNameFor,
   sanitizeText,
   sanitizeUrlForDisplay,
+  safeDisplayName,
 };

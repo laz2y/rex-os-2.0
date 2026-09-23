@@ -1,36 +1,38 @@
 /**
  * Direct Link → pyLoad submission orchestrator (REX OS v2.5.0 Fix #1).
  *
- * Turns "did it work?" into exactly three structured outcomes:
+ * Pipeline: source preflight → single-flight idempotent add_package →
+ * three-outcome classification with read-only reconciliation.
  *
- *   { status: "accepted",  packageId?, recovered?, message: "Added to pyLoad" }
- *   { status: "rejected",  message: "pyLoad rejected the link: <safe reason>" }
+ *   { status: "accepted",  packageId?, recovered?, displayName, message: "Added to pyLoad" }
+ *   { status: "rejected",  message: "Source rejected…" | "pyLoad rejected the link: <safe reason>" }
  *   { status: "ambiguous", message: "Submission may have been accepted by pyLoad. Checking status…" }
  *
  * Core rules:
- *   - every submission is identified by the URL fingerprint (never by the
- *     first 200 URL characters);
+ *   - submissions are identified by URL fingerprint (never by name/URL text);
  *   - a repeat of a pending fingerprint awaits the SAME in-flight promise —
- *     add_package is called at most once per fingerprint;
- *   - ANY failure other than a provable pre-flight failure (connection never
- *     reached pyLoad) triggers RECONCILIATION against pyLoad's queue and
- *     active downloads BEFORE a status is chosen — the live Ant-Man case
- *     proved pyLoad can create + start a package even though REX recorded an
- *     HTTP 400/502 error;
- *   - add_package is NEVER re-posted while the result is ambiguous;
- *   - logs and client-facing messages only ever contain the fingerprint and
- *     sanitized text — never the full signed URL, cookies, CSRF tokens or
- *     credentials.
+ *     add_package runs at most once per fingerprint;
+ *   - preflight REJECTED (definite source refusal, e.g. expired r2.dev token
+ *     returning 403 HTML) → REJECTED without ever calling pyLoad;
+ *   - ANY post-submission failure that may have reached pyLoad reconciles
+ *     FIRST (queue_data → collector_data → status_downloads → detail
+ *     confirmation), because pyLoad can create + start the package even when
+ *     REX records a 400/502 (live Ant-Man evidence);
+ *   - add_package is NEVER re-posted while ambiguous;
+ *   - reconciliation is strictly READ-ONLY (no restart/move/remove/move to
+ *     collector, no destination changes);
+ *   - logs and responses never contain the full signed URL, cookies, CSRF
+ *     tokens or credentials; displayName is leak-safe.
  */
 
 const pyLoadService = require("./pyLoadService");
-const {
-  submissions: defaultRegistry,
-} = require("./submissionRegistry");
+const { preflightSource } = require("./sourcePreflight");
+const { submissions: defaultRegistry } = require("./submissionRegistry");
 const {
   fingerprintUrl,
   packageNameFor,
   sanitizeText,
+  safeDisplayName,
 } = require("./submissionIdentity");
 
 const ACCEPTED_MESSAGE = "Added to pyLoad";
@@ -52,13 +54,10 @@ const VALIDATION_STATUSES = new Set([400, 422]);
 
 /**
  * Explicit pre-enqueue validation phrases — deliberately NARROW.
- *
- * A 400/422 is only a DEFINITE rejection when pyLoad's own response clearly
- * says the links/input were invalid BEFORE enqueueing. Generic "Bad Request"
- * bodies, empty bodies, HTML error pages and axios stock messages are treated
- * as unclear: a 400/422 can also arrive AFTER pyLoad already created the
- * package (the live Ant-Man evidence), so unknown errors stay ambiguous.
- * No broad keyword rule that could turn unknown errors into rejection.
+ * A 400/422 is only a DEFINITE rejection when pyLoad's own structured
+ * response clearly says the links/input were invalid BEFORE enqueueing AND
+ * clean reconciliation finds no package. Generic "Bad Request", empty/HTML
+ * bodies and axios stock messages stay AMBIGUOUS (Ant-Man rule).
  */
 const EXPLICIT_VALIDATION_RE =
   /\b(?:no valid links?|invalid links?|no links\s*(?:supplied|provided|given)?|invalid urls?|malformed\s*(?:url|link)|empty links?)\b/i;
@@ -67,9 +66,6 @@ function isDefiniteValidationError(error) {
   const status = httpStatusOf(error);
   if (!VALIDATION_STATUSES.has(status)) return false;
 
-  // Only a structured pyLoad body (JSON object with a message field) can
-  // clearly prove pre-enqueue validation. HTML pages, empty bodies and plain
-  // strings ("Bad Request") cannot.
   const data = error && error.response ? error.response.data : null;
   if (!data || typeof data !== "object") return false;
 
@@ -132,78 +128,155 @@ function preflightMessage(code, baseUrl) {
 }
 
 /**
- * Does this pyLoad package belong to our submission?
- * Matches the package label we sent (truncated URL) or, when pyLoad returns
- * link lists, the exact submitted URL inside them.
+ * Semantics-preserving URL comparison: exact string first, then the
+ * normalized fingerprint. Signed query parameters remain meaningful (they
+ * are part of the fingerprint).
  */
-function matchesPackage(pkg, url, packageName) {
-  if (!pkg) return false;
-  if (pkg.name && pkg.name === packageName) return true;
-  if (Array.isArray(pkg.links)) {
-    for (const link of pkg.links) {
-      const linkUrl =
-        typeof link === "string" ? link : link && (link.url || link.href);
-      if (linkUrl && linkUrl === url) return true;
-    }
+function urlsMatch(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  try {
+    return fingerprintUrl(a) === fingerprintUrl(b);
+  } catch {
+    return false;
   }
-  return false;
 }
 
 /**
- * Reconciliation — after an uncertain result, ask pyLoad whether the package
- * actually exists. Checks the queue first (get_queue), then active downloads
- * (status_downloads, which carries package names for started downloads —
- * the Ant-Man package had already started downloading).
+ * Read-only reconciliation (steps 1–4 of the Fix #1 spec):
+ *   1. get_queue_data        — packages[].links[].url exact/normalized match
+ *   2. get_collector_data    — same (CRITICAL: accepted downloads park here
+ *                              after leaving active status)
+ *   3. status_downloads      — package_id when known; package-name /
+ *                              resolved-file-name matching only as
+ *                              conservative secondary evidence
+ *   4. get_package_data      — confirms a candidate pid via its original
+ *                              URLs when only weak evidence existed
  *
- * Returns { found, packageId, source, undetermined }:
- *   undetermined = reconciliation itself failed, so we learned nothing.
+ * Never mutates pyLoad state. Returns
+ *   { found, packageId, source, resolvedName, undetermined }.
  */
-async function reconcile(pyLoad, { url, packageName }) {
+async function reconcile(pyLoad, { url, packageName, normalizedUrl }) {
+  const attempted = [];
   let anySuccess = false;
-  let anyFailure = false;
 
+  const findInPackages = (packages) => {
+    for (const pkg of packages || []) {
+      for (const link of pkg.links || []) {
+        if (urlsMatch(link.url, url)) {
+          return { pkg, link };
+        }
+      }
+    }
+    return null;
+  };
+
+  // ---- Step 1: queue data -------------------------------------------------
+  let queueHit = null;
   try {
-    const packages = await pyLoad.listPackages();
+    attempted.push("queue_data");
+    const packages = await pyLoad.getQueueData();
     anySuccess = true;
-    const match = packages.find((pkg) => matchesPackage(pkg, url, packageName));
-    if (match) {
+    queueHit = findInPackages(packages);
+    if (queueHit) {
       return {
         found: true,
-        packageId: match.id != null ? match.id : null,
-        source: "queue",
+        packageId: queueHit.pkg.id != null ? queueHit.pkg.id : null,
+        source: "queue_data",
+        resolvedName: queueHit.link.name || null,
         undetermined: false,
       };
     }
   } catch {
-    anyFailure = true;
+    /* fall through to collector */
   }
 
+  // ---- Step 2: collector data --------------------------------------------
+  let collectorHit = null;
   try {
-    const downloads = await pyLoad.getDownloads();
+    attempted.push("collector_data");
+    const packages = await pyLoad.getCollectorData();
     anySuccess = true;
-    const match = downloads.find(
-      (item) =>
-        (item.package && item.package === packageName) ||
-        (item.name && packageName && item.name === packageName)
-    );
-    if (match) {
+    collectorHit = findInPackages(packages);
+    if (collectorHit) {
       return {
         found: true,
-        packageId: match.packageId != null ? match.packageId : null,
-        source: "downloads",
+        packageId: collectorHit.pkg.id != null ? collectorHit.pkg.id : null,
+        source: "collector_data",
+        resolvedName: collectorHit.link.name || null,
         undetermined: false,
       };
     }
   } catch {
-    anyFailure = true;
+    /* fall through to active downloads */
+  }
+
+  // ---- Step 3: active downloads (conservative) ----------------------------
+  try {
+    attempted.push("status_downloads");
+    const downloads = await pyLoad.getDownloads();
+    anySuccess = true;
+    const hit = (downloads || []).find((item) => {
+      // Conservative secondary evidence: the package label we sent, or a
+      // resolved file name derived from our URL path. A row's package_id
+      // alone proves nothing (ids are pyLoad-internal) — when present it is
+      // CONFIRMED via get_package_data below before we accept it.
+      if (item.package && item.package === packageName) return true;
+      const pathBase = (() => {
+        try {
+          return decodeURIComponent(
+            new URL(normalizedUrl).pathname.split("/").pop() || ""
+          );
+        } catch {
+          return "";
+        }
+      })();
+      return Boolean(pathBase && item.name && item.name === pathBase);
+    });
+    if (hit && hit.packageId != null) {
+      // Confirm the candidate via read-only detail (step 4) — package-name
+      // equality alone is not exact URL proof.
+      try {
+        attempted.push("get_package_data");
+        const detail = await pyLoad.getPackageData(hit.packageId);
+        anySuccess = true;
+        const confirmed = (detail && detail.links || []).some((link) =>
+          urlsMatch(link.url, url)
+        );
+        if (confirmed) {
+          return {
+            found: true,
+            packageId: hit.packageId,
+            source: "package_data",
+            resolvedName: hit.name || null,
+            undetermined: false,
+          };
+        }
+      } catch {
+        /* confirmation unavailable — keep searching */
+      }
+    } else if (hit) {
+      // No pid to confirm against, but the conservative evidence matched
+      // (package label we sent / resolved file name from our URL path).
+      return {
+        found: true,
+        packageId: null,
+        source: "downloads:name",
+        resolvedName: hit.name || null,
+        undetermined: false,
+      };
+    }
+  } catch {
+    /* fall through */
   }
 
   return {
     found: false,
     packageId: null,
     source: null,
-    // Learned nothing only when EVERY reconciliation call failed.
-    undetermined: anyFailure && !anySuccess,
+    resolvedName: null,
+    undetermined: attempted.length > 0 && !anySuccess,
+    attempted,
   };
 }
 
@@ -211,11 +284,11 @@ async function reconcile(pyLoad, { url, packageName }) {
  * Classify a failed add_package attempt, reconciling first whenever pyLoad
  * might already hold the package (the Ant-Man rule).
  */
-async function classifyFailure(pyLoad, { url, packageName, fingerprint, error }) {
+async function classifyFailure(pyLoad, context) {
+  const { url, packageName, normalizedUrl, fingerprint, error } = context;
   const status = httpStatusOf(error);
   const code = error && error.code ? error.code : null;
   const detail = sanitizeText(errorDetail(error));
-  const reconcileBase = { url, packageName };
 
   // 1) Provably never reached pyLoad → definite non-creation (rejected).
   if (status == null && code && PREFLIGHT_CODES.has(code)) {
@@ -264,7 +337,7 @@ async function classifyFailure(pyLoad, { url, packageName, fingerprint, error })
 
   // 4) Everything else: RECONCILE FIRST. pyLoad may already hold the package
   //    even though the response was an error / lost / timed out.
-  const rec = await reconcile(pyLoad, reconcileBase);
+  const rec = await reconcile(pyLoad, { url, packageName, normalizedUrl });
 
   if (rec.found) {
     return {
@@ -274,6 +347,10 @@ async function classifyFailure(pyLoad, { url, packageName, fingerprint, error })
       packageName,
       packageId: rec.packageId,
       recovered: true,
+      displayName: safeDisplayName({
+        resolvedName: rec.resolvedName,
+        url: normalizedUrl,
+      }),
       message: ACCEPTED_MESSAGE,
       reason: detail || (status ? `HTTP ${status}` : "recovered"),
       reconcile: `found:${rec.source}`,
@@ -282,11 +359,10 @@ async function classifyFailure(pyLoad, { url, packageName, fingerprint, error })
   }
 
   // 5) Definite rejection ONLY when BOTH hold:
-  //      (a) pyLoad's response clearly represents a definite validation/input
-  //          rejection before enqueueing (narrow explicit-phrase match), AND
+  //      (a) pyLoad's structured response clearly represents a definite
+  //          validation/input rejection before enqueueing, AND
   //      (b) reconciliation ran cleanly and found no created package.
-  //    Generic/empty/unclear 400/422 bodies → AMBIGUOUS when nothing is found
-  //    (the 400 may have arrived after pyLoad created the package).
+  //    Generic/empty/unclear 400/422 → AMBIGUOUS when nothing is found.
   if (
     VALIDATION_STATUSES.has(status) &&
     isDefiniteValidationError(error) &&
@@ -304,8 +380,8 @@ async function classifyFailure(pyLoad, { url, packageName, fingerprint, error })
     };
   }
 
-  // 6) Ambiguous: lost/timeout/5xx with no package found, or reconciliation
-  //    itself could not run. NEVER auto-resubmit from here.
+  // 6) Ambiguous: generic 400/422, lost/timeout/5xx with no package found,
+  //    or reconciliation itself could not run. NEVER auto-resubmit.
   return {
     status: "ambiguous",
     ok: false,
@@ -320,19 +396,21 @@ async function classifyFailure(pyLoad, { url, packageName, fingerprint, error })
 
 /**
  * One sanitized, single-line diagnostic per state change. Never logs the
- * full URL, package label (it is the URL), cookies, CSRF or credentials.
+ * full URL, cookies, CSRF or credentials; displayName is leak-safe.
  */
 function logSubmission(log, result) {
   const parts = [
     new Date().toISOString(),
     `fp=${result.fingerprint}`,
     `state=${result.status}`,
+    `preflight=${result.preflight || "skipped"}`,
     `http=${result.httpStatus != null ? result.httpStatus : "-"}`,
     `reconcile=${result.reconcile || "skipped"}`,
     `packageId=${result.packageId != null ? result.packageId : "-"}`,
   ];
   if (result.duplicate) parts.push("duplicate=1");
   if (result.attempts != null) parts.push(`attempts=${result.attempts}`);
+  if (result.displayName) parts.push(`displayName="${sanitizeText(result.displayName)}"`);
   if (result.reason) parts.push(`reason="${sanitizeText(result.reason)}"`);
 
   const line = `[pyLoad][submission] ${parts.join(" ")}`;
@@ -344,23 +422,30 @@ function logSubmission(log, result) {
 }
 
 /**
- * Submit one direct link with idempotency + three-outcome classification.
+ * Submit one direct link: preflight → idempotent add_package →
+ * classification/reconciliation.
  *
  * @param {string} url  the trimmed direct download URL
  * @param {object} [options]
- * @param {object} [options.pyLoad]    pyLoad client (mockable in tests)
- * @param {object} [options.registry]  submission registry (mockable in tests)
- * @param {object} [options.log]       logger (mockable in tests)
+ * @param {object}   [options.pyLoad]       pyLoad client (mockable in tests)
+ * @param {object}   [options.registry]     submission registry (mockable)
+ * @param {object}   [options.log]          logger (mockable)
+ * @param {function} [options.preflightFn]  preflight implementation (mockable)
+ * @param {boolean}  [options.skipPreflight] test escape hatch
  * @returns {Promise<object>} { status: accepted|rejected|ambiguous, … }
  */
 async function submitDirectLink(url, options = {}) {
   const pyLoad = options.pyLoad || pyLoadService;
   const registry = options.registry || defaultRegistry;
   const log = options.log || console;
+  const doPreflight = options.skipPreflight
+    ? null
+    : options.preflightFn || preflightOverride || preflightSource;
 
   const trimmed = String(url == null ? "" : url).trim();
   const packageName = packageNameFor(trimmed);
   const fingerprint = fingerprintUrl(trimmed);
+  const normalizedUrl = trimmed; // fingerprintUrl normalizes internally
 
   const existing = registry.get(fingerprint);
 
@@ -385,7 +470,11 @@ async function submitDirectLink(url, options = {}) {
 
     // d) Ambiguous: re-run reconciliation only — NEVER add_package again.
     if (existing.state === "ambiguous") {
-      const rec = await reconcile(pyLoad, { url: trimmed, packageName });
+      const rec = await reconcile(pyLoad, {
+        url: trimmed,
+        packageName,
+        normalizedUrl,
+      });
       if (rec.found) {
         const result = {
           status: "accepted",
@@ -394,10 +483,15 @@ async function submitDirectLink(url, options = {}) {
           packageName,
           packageId: rec.packageId,
           recovered: true,
+          displayName: safeDisplayName({
+            resolvedName: rec.resolvedName,
+            url: normalizedUrl,
+          }),
           message: ACCEPTED_MESSAGE,
           reason: "found during duplicate re-check",
           reconcile: `found:${rec.source}`,
           httpStatus: null,
+          preflight: "skipped",
           duplicate: true,
         };
         registry.settle(fingerprint, result);
@@ -419,6 +513,36 @@ async function submitDirectLink(url, options = {}) {
   const entry = registry.begin(fingerprint, packageName);
 
   entry.promise = (async () => {
+    // ---- Source preflight (before any pyLoad call) ------------------------
+    let preflightInfo = null;
+    if (doPreflight) {
+      try {
+        preflightInfo = await doPreflight(trimmed);
+      } catch {
+        preflightInfo = { verdict: "uncertain", reason: "Preflight could not run" };
+      }
+
+      if (preflightInfo && preflightInfo.verdict === "rejected") {
+        // Definite source refusal — DO NOT call pyLoad.
+        const result = {
+          status: "rejected",
+          ok: false,
+          fingerprint,
+          packageName,
+          message: sanitizeText(preflightInfo.reason) || "Source rejected the link.",
+          reason: sanitizeText(preflightInfo.reason),
+          reconcile: "skipped",
+          httpStatus: null,
+          preflight: "rejected",
+        };
+        registry.settle(fingerprint, result);
+        result.attempts = entry.attempts;
+        logSubmission(log, result);
+        return result;
+      }
+    }
+
+    // ---- pyLoad submission ------------------------------------------------
     let result;
     try {
       const added = await pyLoad.addPackage(trimmed);
@@ -429,18 +553,25 @@ async function submitDirectLink(url, options = {}) {
         packageName: added && added.packageName ? added.packageName : packageName,
         packageId: added ? added.packageId ?? null : null,
         recovered: false,
+        displayName: safeDisplayName({
+          resolvedName: preflightInfo && preflightInfo.filename,
+          url: normalizedUrl,
+        }),
         message: ACCEPTED_MESSAGE,
         reason: null,
         reconcile: "skipped",
         httpStatus: 200,
+        preflight: preflightInfo ? preflightInfo.verdict : "skipped",
       };
     } catch (error) {
       result = await classifyFailure(pyLoad, {
         url: trimmed,
         packageName,
+        normalizedUrl,
         fingerprint,
         error,
       });
+      result.preflight = preflightInfo ? preflightInfo.verdict : "skipped";
     }
 
     registry.settle(fingerprint, result);
@@ -452,10 +583,21 @@ async function submitDirectLink(url, options = {}) {
   return entry.promise;
 }
 
+// Test hook: lets controller-level tests stub the preflight without HTTP
+// DNS lookups (unit tests pass preflightFn per call instead).
+let preflightOverride = null;
+
 module.exports = {
   submitDirectLink,
   reconcile,
+  urlsMatch,
   sanitizeText, // re-exported for tests/consumers
+  __setPreflight(fn) {
+    preflightOverride = fn;
+  },
+  __resetPreflight() {
+    preflightOverride = null;
+  },
   ACCEPTED_MESSAGE,
   AMBIGUOUS_MESSAGE,
 };

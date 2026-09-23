@@ -246,11 +246,12 @@ export default function DirectLink() {
         return;
       }
 
-      // accepted (or legacy { ok: true } response)
+      // accepted (or legacy { ok: true } response) — displayName is the
+      // leak-safe server name (never the URL-derived pyLoad package label).
       const added = {
         url: trimmed,
         packageId: data?.packageId ?? null,
-        packageName: data?.packageName || trimmed,
+        packageName: data?.displayName || data?.packageName || trimmed,
       };
       addedRef.current = [added, ...addedRef.current];
       setLastAdded({

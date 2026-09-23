@@ -2,23 +2,29 @@
  * In-process mock of the pyLoad 0.5.x web UI + JSON API (Fix #1 tests).
  *
  * Freebuff has NO access to the live NAS, so every "live" behavior is
- * simulated here. The mock reproduces exactly the surface REX uses:
+ * simulated here using the VERIFIED pyLoad 0.5.0b3.dev101-ls254 shapes:
  *
- *   GET  /login                 → seed cookie + CSRF meta + login-form HTML
- *   POST /login                 → validates the FAKE dev creds (admin /
- *                                 za2yrocks fallback), returns session cookie
- *   GET  /dashboard             → authed page with a fresh CSRF token
- *   POST /api/add_package       → session + X-CSRFToken required; behavior
- *                                 driven by state.addMode:
- *       "accept"            → create package, 200 {pid}
- *       "reject"            → 400 {error}, NO package created
- *       "reject-echo"       → 400 whose body echoes the full signed URL
- *       "accept-then-502"    → create package, then answer 502 (Ant-Man case)
- *       "accept-then-400"   → create package, then answer generic 400
- *       "drop"              → destroy the socket — response never arrives
- *   GET  /api/get_queue         → queued packages [{pid,name,links}]
- *   GET  /api/status_downloads  → active download rows
- *   GET  /api/get_server_version→ "0.5.x-mock"
+ *   GET  /login                  → seed cookie + CSRF meta + login-form HTML
+ *   POST /login                  → validates the FAKE dev creds (admin /
+ *                                  za2yrocks fallback), returns session cookie
+ *   GET  /dashboard              → authed page with a fresh CSRF token
+ *   POST /api/add_package        → session + X-CSRFToken required; behavior
+ *                                  driven by state.addMode
+ *   GET  /api/get_queue_data     → { packages: [{ pid, name, links: [{ url, name }] }] }
+ *   GET  /api/get_collector_data → same shape, collector packages
+ *   GET  /api/status_downloads   → [{ fid, name, package_id, package_name, ... }]
+ *   GET  /api/get_package_data   → package detail (pid param)
+ *   GET  /api/get_file_data      → file detail (fid param)
+ *   GET  /api/get_queue          → legacy queue summary (Pipeline page)
+ *   GET  /api/get_server_version → version string
+ *
+ * Modes for add_package (state.addMode):
+ *   "accept"          create package, 200 {pid}
+ *   "reject"          400 {error: rejectReason}, NO package created
+ *   "reject-echo"     400 whose body echoes the full signed URL + secrets
+ *   "accept-then-502" create package, then answer 502 (Ant-Man case)
+ *   "accept-then-400" create package, then answer generic 400
+ *   "drop"            destroy the socket — response never arrives
  */
 
 const http = require("http");
@@ -65,22 +71,36 @@ function createMockPyLoad(options = {}) {
     password: options.password || "za2yrocks",
     rejectReason: options.rejectReason || "No valid links supplied",
     addCalls: 0,
+    loginCount: 0,
     loginAttempts: [],
-    packages: [],
-    downloads: [],
+    queue: [],      // packages in queue
+    collector: [],  // packages in collector
+    downloads: [],  // active downloads
     sessions: new Set(),
     nextPid: 1,
+    nextFid: 1,
   };
+
+  const pkgPayload = (pkg) => ({
+    pid: pkg.pid,
+    name: pkg.name,
+    links: pkg.links.map((link, index) => ({
+      fid: pkg.fids[index],
+      url: link,
+      name: pkg.resolved[index] || `file-${index}.bin`,
+      package_id: pkg.pid,
+      status: 12,
+      statusmsg: "downloading",
+      error: "",
+    })),
+  });
 
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://localhost");
 
     // ---- web-UI login flow -------------------------------------------------
     if (req.method === "GET" && url.pathname === "/login") {
-      res.setHeader(
-        "Set-Cookie",
-        `${SEED_COOKIE}=${crypto.randomUUID()}; Path=/`
-      );
+      res.setHeader("Set-Cookie", `${SEED_COOKIE}=${crypto.randomUUID()}; Path=/`);
       res.setHeader("Content-Type", "text/html");
       return res.end(loginPageHtml());
     }
@@ -94,6 +114,7 @@ function createMockPyLoad(options = {}) {
         csrf: params.get("csrf_token"),
       };
       state.loginAttempts.push(attempt);
+      state.loginCount += 1;
 
       const valid =
         attempt.username === state.username &&
@@ -109,7 +130,7 @@ function createMockPyLoad(options = {}) {
         return res.end();
       }
 
-      // Bad credentials: stay on the login page (service then sees the
+      // Bad credentials: stay on the login page (the service then sees the
       // login form on /dashboard and raises a credential-free 401).
       res.setHeader("Content-Type", "text/html");
       return res.end(loginPageHtml());
@@ -164,13 +185,15 @@ function createMockPyLoad(options = {}) {
           );
         }
 
-        // "accept" and "accept-then-502" both CREATE the package first.
+        // "accept" and "accept-then-*" modes all CREATE the package first.
         const pkg = {
           pid: state.nextPid++,
           name: body.name || "Unknown package",
           links,
+          resolved: links.map((_, i) => `resolved-${i}.mkv`),
+          fids: links.map(() => state.nextFid++),
         };
-        state.packages.push(pkg);
+        state.queue.push(pkg);
 
         if (state.addMode === "accept-then-502") {
           res.statusCode = 502;
@@ -179,8 +202,6 @@ function createMockPyLoad(options = {}) {
         }
 
         if (state.addMode === "accept-then-400") {
-          // pyLoad created the package but answers with a GENERIC 400 body —
-          // proves nothing about pre-enqueue validation.
           res.statusCode = 400;
           res.setHeader("Content-Type", "application/json");
           return res.end(JSON.stringify({ error: "Bad Request" }));
@@ -190,19 +211,73 @@ function createMockPyLoad(options = {}) {
         return res.end(JSON.stringify({ pid: pkg.pid }));
       }
 
-      if (req.method === "GET" && url.pathname === "/api/get_queue") {
+      if (req.method === "GET" && url.pathname === "/api/get_queue_data") {
         res.setHeader("Content-Type", "application/json");
-        return res.end(JSON.stringify({ packages: state.packages }));
+        return res.end(JSON.stringify({ packages: state.queue.map(pkgPayload) }));
+      }
+
+      if (req.method === "GET" && url.pathname === "/api/get_collector_data") {
+        res.setHeader("Content-Type", "application/json");
+        return res.end(
+          JSON.stringify({ packages: state.collector.map(pkgPayload) })
+        );
       }
 
       if (req.method === "GET" && url.pathname === "/api/status_downloads") {
+        const rows = [];
+        for (const pkg of state.queue) {
+          pkg.links.forEach((link, i) => {
+            rows.push({
+              fid: pkg.fids[i],
+              name: pkg.resolved[i] || `file-${i}.bin`,
+              package_id: pkg.pid,
+              package_name: pkg.name,
+              status: 5,
+              statusmsg: "waiting",
+            });
+          });
+        }
         res.setHeader("Content-Type", "application/json");
-        return res.end(JSON.stringify(state.downloads));
+        return res.end(JSON.stringify(rows));
+      }
+
+      if (req.method === "GET" && url.pathname === "/api/get_package_data") {
+        const pid = Number.parseInt(url.searchParams.get("pid") || "", 10);
+        const pkg =
+          state.queue.find((p) => p.pid === pid) ||
+          state.collector.find((p) => p.pid === pid);
+        res.setHeader("Content-Type", "application/json");
+        return res.end(JSON.stringify(pkg ? pkgPayload(pkg) : {}));
+      }
+
+      if (req.method === "GET" && url.pathname === "/api/get_file_data") {
+        const fid = Number.parseInt(url.searchParams.get("fid") || "", 10);
+        for (const pkg of [...state.queue, ...state.collector]) {
+          const index = pkg.fids.indexOf(fid);
+          if (index >= 0) {
+            res.setHeader("Content-Type", "application/json");
+            return res.end(
+              JSON.stringify({
+                fid,
+                url: pkg.links[index],
+                name: pkg.resolved[index] || `file-${index}.bin`,
+                package_id: pkg.pid,
+              })
+            );
+          }
+        }
+        res.setHeader("Content-Type", "application/json");
+        return res.end(JSON.stringify({}));
+      }
+
+      if (req.method === "GET" && url.pathname === "/api/get_queue") {
+        res.setHeader("Content-Type", "application/json");
+        return res.end(JSON.stringify({ packages: state.queue.map(pkgPayload) }));
       }
 
       if (req.method === "GET" && url.pathname === "/api/get_server_version") {
         res.setHeader("Content-Type", "application/json");
-        return res.end(JSON.stringify("0.5.x-mock"));
+        return res.end(JSON.stringify("0.5.0b3.dev101-ls254"));
       }
 
       res.statusCode = 404;
