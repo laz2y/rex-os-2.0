@@ -104,6 +104,46 @@ test("Unified Downloads pyLoad tab also honours the three submission outcomes", 
 });
 
 // ---------------------------------------------------------------------------
+// Static-path hotfix — both dist layouts must keep working
+// ---------------------------------------------------------------------------
+test("server resolves BOTH dist layouts (packaged first, development second)", () => {
+  const src = read("backend/server.js");
+
+  assert.ok(src.includes("const distCandidates = ["), "dual-candidate list exists");
+
+  // Priority order is the live-validated behavior: a packaged runtime ships
+  // <dirname>/dist, the dev checkout has <dirname>/../dist. Packaged wins.
+  const packaged = src.indexOf('path.join(__dirname, "dist")');
+  const development = src.indexOf('path.join(__dirname, "..", "dist")');
+  assert.ok(packaged > 0, "packaged <dirname>/dist candidate present");
+  assert.ok(development > packaged, "development <dirname>/../dist is the fallback");
+
+  assert.ok(
+    src.includes('fs.existsSync(path.join(candidate, "index.html"))'),
+    "a directory without index.html is not treated as a frontend build"
+  );
+  assert.ok(src.includes("express.static(distDir)"), "assets keep serving");
+  assert.ok(
+    src.includes('req.path.startsWith("/api")'),
+    "/api keeps priority over the SPA fallback"
+  );
+  assert.ok(
+    src.includes('res.sendFile(path.join(distDir, "index.html"))'),
+    "SPA routes still return index.html"
+  );
+
+  // API-only mode remains, reachable only when no build was found.
+  assert.ok(
+    src.indexOf('app.get("/", (req, res) =>') > src.indexOf("express.static(distDir)"),
+    "the JSON root is registered AFTER static serving (fallback only)"
+  );
+  assert.ok(
+    src.includes('app: "REX API"'),
+    "API-only root still answers when no frontend build exists"
+  );
+});
+
+// ---------------------------------------------------------------------------
 // Contract + wiring preserved
 // ---------------------------------------------------------------------------
 test("frontend API wrapper contract unchanged", () => {

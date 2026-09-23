@@ -91,13 +91,28 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-// Production: serve the built frontend (../dist) from the same process so a
-// single `node server.js` hosts both the REX OS UI and the /api backend.
-// Registered before the JSON root route so / serves the app shell in
-// production; guarded so it is skipped when dist/ is absent (pure API).
-const distDir = path.join(__dirname, "..", "dist");
+// Production: serve the built frontend from the same process so a single
+// `node server.js` hosts both the REX OS UI and the /api backend. Registered
+// before the JSON root route so / serves the app shell in production; guarded
+// so it is skipped when dist/ is absent (pure API).
+//
+// TWO LAYOUTS ARE SUPPORTED — validated live on the NAS and required by the
+// REX Updater release:
+//   packaged runtime → <dirname>/dist        (backend/ and dist/ are siblings
+//                                              inside the release archive)
+//   development      → <dirname>/../dist     (Vite writes to the repo root)
+// Exactly one wins; a directory without index.html does not count as a build.
 const fs = require("fs");
-if (fs.existsSync(distDir)) {
+const distCandidates = [
+  path.join(__dirname, "dist"),
+  path.join(__dirname, "..", "dist"),
+];
+
+const distDir = distCandidates.find((candidate) =>
+  fs.existsSync(path.join(candidate, "index.html"))
+);
+
+if (distDir) {
   // Real files (assets, index.html, favicon) win; then the SPA fallback
   // serves the app shell for unknown non-/api GET paths.
   app.use(express.static(distDir));
