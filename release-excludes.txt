@@ -9,6 +9,14 @@ backend/.env.local
 backend/.env.example
 *.log
 
+# Runtime state is NEVER packaged — production mounts it at /app/data
+# (see DEPLOY.md). Shipping it would install one machine's history as another
+# machine's live state.
+backend/data
+
+# Migration/ops utilities: not part of the REX OS runtime.
+deploy/rex-persistence-migration.sh
+
 # The release archives themselves (public copies are for the Freebuff Assets panel / temp download only).
 public/assets/rexos-2.0-release.tar.gz
 dist/assets/rexos-2.0-release.tar.gz

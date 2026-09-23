@@ -1,5 +1,7 @@
 const path = require("path");
 
+const { APP_VERSION } = require("./version");
+
 // Server-side credentials live in backend/.env (gitignored) or in the host
 // process environment — never in frontend code or VITE_* variables.
 require("dotenv").config({ path: path.join(__dirname, ".env") });
@@ -131,15 +133,17 @@ if (distDir) {
 app.get("/", (req, res) => {
   res.json({
     app: "REX API",
-    version: "2.5.0",
+    version: APP_VERSION,
     status: "online",
   });
 });
 
+// The REX Updater's post-install health gate reads `version` from here and
+// compares it with the release manifest target — see backend/version.js.
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
-    version: "2.5.0",
+    version: APP_VERSION,
     uptime: process.uptime(),
   });
 });
