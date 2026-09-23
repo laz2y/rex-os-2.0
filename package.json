@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "preview": "vite preview",
+    "test": "node --test backend/tests/*.test.js",
     "backend": "node backend/server.js"
   },
   "dependencies": {

@@ -1,4 +1,5 @@
 const pyLoad = require("../services/pyLoadService");
+const { submitDirectLink } = require("../services/directLinkSubmission");
 
 /**
  * Direct Link Add — REX → pyLoad.
@@ -108,7 +109,22 @@ exports.getInfo = async (req, res) => {
   }
 };
 
-/** POST /api/pyload/add — { url } → pyLoad.addPackage. */
+/**
+ * POST /api/pyload/add — { url } → structured submission outcome (Fix #1).
+ *
+ * Response contract (always HTTP 200 for the three outcomes so the browser
+ * can read `status` directly; validation/config errors keep 400/503):
+ *
+ *   accepted:  { ok:true,  status:"accepted",  packageId?, packageName,
+ *                recovered?, message:"Added to pyLoad", fingerprint, url }
+ *   rejected:  { ok:false, status:"rejected",  message:"pyLoad rejected the
+ *                link: <sanitized reason>", error:<same>, fingerprint, url }
+ *   ambiguous: { ok:false, status:"ambiguous", message:"Submission may have
+ *                been accepted by pyLoad. Checking status…", fingerprint, url }
+ *
+ * Idempotency (URL fingerprint), classification and reconciliation live in
+ * services/directLinkSubmission.js; diagnostics are logged there, sanitized.
+ */
 exports.addLink = async (req, res) => {
   const { url } = req.body || {};
   const trimmed = typeof url === "string" ? url.trim() : "";
@@ -141,20 +157,27 @@ exports.addLink = async (req, res) => {
   }
 
   try {
-    const result = await pyLoad.addPackage(trimmed);
-    res.json({
-      ok: true,
+    const result = await submitDirectLink(trimmed);
+    res.status(200).json({
+      ok: result.status === "accepted",
+      status: result.status,
+      message: result.message,
       url: trimmed,
-      packageId: result.packageId,
-      packageName: result.packageName,
-      message: "Download added",
+      fingerprint: result.fingerprint,
+      ...(result.status === "accepted"
+        ? {
+            packageId: result.packageId ?? null,
+            packageName: result.packageName,
+            recovered: Boolean(result.recovered),
+          }
+        : {}),
+      // Backward-compatible alias: older clients read `.error` on failure.
+      ...(result.status === "rejected" ? { error: result.message } : {}),
+      ...(result.duplicate ? { duplicate: true } : {}),
     });
   } catch (error) {
-    // A rejected session usually means stale credentials — re-auth next time.
-    const authStatus = error.response ? error.response.status : error.status;
-    if (authStatus === 401 || authStatus === 403) {
-      pyLoad.resetSession();
-    }
+    // submitDirectLink classifies instead of throwing — this is a safety net
+    // (e.g. an unexpected bug); keep the old sanitized failure path.
     fail(res, error, "Failed to add the download in pyLoad.");
   }
 };

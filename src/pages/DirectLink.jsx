@@ -140,7 +140,8 @@ export default function DirectLink() {
   const [url, setUrl] = useState("");
   const [adding, setAdding] = useState(false);
   const [formError, setFormError] = useState(null);
-  const [lastAdded, setLastAdded] = useState(null); // { url, packageId, packageName }
+  const [notice, setNotice] = useState(null); // ambiguous-state notice
+  const [lastAdded, setLastAdded] = useState(null); // { url, packageId, packageName, message }
   const addedRef = useRef([]);
 
   const [downloads, setDownloads] = useState([]);
@@ -193,7 +194,10 @@ export default function DirectLink() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    // Double-submit guard (Enter key can fire even while the button is disabled).
+    if (adding) return;
     setFormError(null);
+    setNotice(null);
 
     const trimmed = url.trim();
 
@@ -219,17 +223,46 @@ export default function DirectLink() {
 
     try {
       const data = await addDirectLink(trimmed);
+      const outcome = data?.status;
+
+      if (outcome === "rejected" || (data?.ok === false && !outcome)) {
+        // Definite refusal — keep the URL so the user can inspect/fix it.
+        setFormError(
+          data?.message ||
+            data?.error ||
+            "pyLoad rejected the link.",
+        );
+        return;
+      }
+
+      if (outcome === "ambiguous") {
+        // Uncertain — do NOT clear the URL, do NOT claim success. The backend
+        // re-checks (reconciles) automatically if the link is submitted again.
+        setNotice({
+          message:
+            data?.message ||
+            "Submission may have been accepted by pyLoad. Checking status…",
+        });
+        return;
+      }
+
+      // accepted (or legacy { ok: true } response)
       const added = {
         url: trimmed,
-        packageId: data.packageId ?? null,
-        packageName: data.packageName || trimmed,
+        packageId: data?.packageId ?? null,
+        packageName: data?.packageName || trimmed,
       };
       addedRef.current = [added, ...addedRef.current];
-      setLastAdded(added);
+      setLastAdded({
+        ...added,
+        message: data?.message || "Added to pyLoad",
+        recovered: Boolean(data?.recovered),
+      });
       setUrl("");
       setStatusLoading(true);
       refreshStatus();
     } catch (err) {
+      // REX-level failure (validation / pyLoad not configured / unexpected).
       console.error("[REX OS] add direct link failed:", err);
       setFormError(
         err?.response?.data?.error ||
@@ -337,11 +370,18 @@ export default function DirectLink() {
           </div>
         )}
 
+        {notice && !adding && (
+          <div className="dl-alert warn" role="status">
+            <AlertTriangle size={16} />
+            {notice.message}
+          </div>
+        )}
+
         {lastAdded && !adding && (
           <div className="dl-alert success" role="status">
             <CheckCircle2 size={16} />
             <div>
-              <strong>✓ Download added</strong>
+              <strong>{lastAdded.message || "Added to pyLoad"}</strong>
               <span>
                 {lastAdded.packageName
                   ? `${lastAdded.packageName} — queued in pyLoad.`

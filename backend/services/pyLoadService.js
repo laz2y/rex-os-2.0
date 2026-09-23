@@ -375,6 +375,33 @@ async function getQueue() {
   });
 }
 
+/**
+ * Queue packages in raw-ish form for submission reconciliation (Fix #1).
+ * Returns [{ id, name, links }] where `links` is the raw link list when pyLoad
+ * provides one — lets REX prove a package exists after an ambiguous add
+ * without ever re-posting add_package. Additive; getQueue() (Pipeline page)
+ * is unchanged.
+ */
+async function listPackages() {
+  return withAuth(async (auth) => {
+    const { baseUrl } = getConfig();
+    const { data } = await axios.get(`${baseUrl}/api/get_queue`, {
+      headers: authHeaders(auth),
+      timeout: API_TIMEOUT,
+    });
+    const list = Array.isArray(data)
+      ? data
+      : data && Array.isArray(data.packages)
+      ? data.packages
+      : [];
+    return list.map((pkg) => ({
+      id: pkg.pid ?? null,
+      name: pkg.name || "",
+      links: Array.isArray(pkg.links) ? pkg.links : [],
+    }));
+  });
+}
+
 /** Lightweight reachability + version probe (used by the page and Settings). */
 async function probe() {
   if (!isConfigured()) throw new Error("not configured");
@@ -410,5 +437,6 @@ module.exports = {
   deletePackages,
   getDownloads,
   getQueue,
+  listPackages,
   probe,
 };
